@@ -11,6 +11,19 @@ Radar comunitario de seguridad en México: fraudes telefónicos, robos, asaltos 
 - **Tendencias emergentes**: proactivo, sin que preguntes — si 3+ reportes distintos caen en el mismo punto (~1km) en menos de 7 días, se marca con un ícono pulsante ⚠️ y aparece un aviso automático al cargar el mapa.
 - **Mapa**: capa de fraude telefónico agregado por región (LADA), incidentes físicos individuales con ubicación aproximada, contexto histórico oficial (SESNSP) de fondo, y tendencias emergentes. Filtro de ventana de tiempo (slider de días en el header) y por categoría (chips dinámicos). Toggle para ver como mapa de calor. Los puntos más recientes se ven más opacos/grandes (recencia visual); eventos duplicados reportados por varias personas se fusionan en uno con contador de confirmaciones.
 
+## Hospedaje / Airbnb (reportar a una persona por nombre)
+
+Vertical agregado el 2026-09-09 para reemplazar el "no le rentes a X" que hoy se pierde en WhatsApp. Distinto al resto del sitio en un punto clave: identifica a una PERSONA por nombre, no un teléfono o una zona — eso es más identificable y exige moderación humana antes de publicar (ver `MODERATION.md`).
+
+- Botón "Hospedaje / Airbnb" en el mapa abre un formulario: nombre de la persona, link del anuncio (opcional), descripción, imagen de evidencia (opcional, ej. captura de conversación).
+- Escritura solo vía la función `submit_named_report()` (Postgres, `SECURITY DEFINER`) — nunca inserción directa a tabla, así el cliente no puede forzar `status='published'` aunque quisiera.
+- Todo reporte con nombre entra en `status='pending'` y se queda ahí hasta que un moderador lo revisa a mano en Supabase Studio (sin panel dedicado en esta v1) — ver `MODERATION.md` para el checklist.
+- Imagen: el original sube a un bucket privado (`evidence-private`, sin lectura pública); solo el derivado recortado/redactado que el moderador sube a mano llega al bucket público (`evidence-public`).
+- Rate-limit adicional por nombre reportado (máx. 3 reportes/24h con el mismo nombre) además del rate-limit por IP que ya cubre todo el sitio.
+- Búsqueda por nombre (vista `named_report_confidence`) solo cuenta reportes ya publicados — igual de anónima que la búsqueda por teléfono, nunca expone la evidencia ni el link del anuncio.
+- Expiración automática: un reporte sin un segundo reporte que lo corrobore se oculta a los 90 días (`pg_cron`, diario).
+- Modelo de datos genérico a propósito (`report_subjects`, `report_evidence`) — reutilizable para cualquier categoría futura que necesite identificar a alguien por nombre, no exclusivo de hospedaje.
+
 ## Arquitectura
 
 - Frontend: HTML/JS estático en GitHub Pages, dominio propio `radarurbano.org` detrás de Cloudflare (WAF + proxy, origen nunca expuesto)

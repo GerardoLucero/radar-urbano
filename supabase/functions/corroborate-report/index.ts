@@ -106,6 +106,51 @@ Deno.serve(async (req) => {
     return new Response('bad payload', { status: 400 })
   }
 
+  // 0.5 Reportes con nombre (hospedaje y futuras categorias que identifiquen a una
+  // persona): NUNCA se auto-publican -- eso ya lo garantiza submit_named_report() al
+  // insertar con status='pending' a nivel de base de datos, este endpoint no lo toca.
+  // Aqui solo avisamos por correo (no hay panel de moderacion dedicado en v1) y
+  // señalamos si ya existe corroboracion, para que la revision manual sea mas rapida.
+  const { data: subjects } = await supabaseAdmin
+    .from('report_subjects')
+    .select('value, value_normalized, reference_url')
+    .eq('report_id', newRow.id)
+
+  if (subjects && subjects.length > 0) {
+    const subject = subjects[0]
+    let corroborationNote = 'Sin otros reportes previos con este nombre.'
+
+    if (NVIDIA_NIM_API_KEY) {
+      const { data: priorPublished } = await supabaseAdmin
+        .from('report_subjects')
+        .select('report_id, reports!inner(id, description, status)')
+        .eq('value_normalized', subject.value_normalized)
+        .eq('reports.status', 'published')
+        .neq('report_id', newRow.id)
+
+      if (priorPublished && priorPublished.length > 0) {
+        corroborationNote = `${priorPublished.length} reporte(s) previo(s) publicado(s) con el mismo nombre -- revisar si describen el mismo patron.`
+      }
+    }
+
+    if (RESEND_API_KEY && ALERT_EMAIL) {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: 'Radar Urbano <onboarding@resend.dev>',
+          to: [ALERT_EMAIL],
+          subject: `Reporte pendiente de moderacion: ${subject.value}`,
+          text: `Nuevo reporte con nombre "${subject.value}" (categoria: ${newRow.category ?? 'sin clasificar'}) esta en status=pending y requiere tu revision manual antes de poder publicarse.\n\n${corroborationNote}\n\nAnuncio referenciado: ${subject.reference_url ?? '(no proporcionado)'}\n\nRevisa en Supabase Studio: tabla reports, id=${newRow.id}. No lo publiques sin antes recortar/redactar la imagen de evidencia (si la hay) y subir solo el derivado al bucket evidence-public.`,
+        }),
+      })
+    }
+
+    // No clasificacion adicional ni fusion de duplicados para reportes con nombre --
+    // la categoria ya la fijo submit_named_report() y no tienen lat/lon que fusionar.
+    return new Response('ok: named report flagged for manual moderation', { status: 200 })
+  }
+
   // 0. Geocoding: si escribieron una zona/colonia en vez de dar GPS, la convertimos
   // a coordenadas aproximadas para que el reporte SI aparezca en el mapa.
   // El trigger de fuzzing en UPDATE se encarga de difuminarlas al guardarse.
