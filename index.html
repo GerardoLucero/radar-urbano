@@ -454,12 +454,28 @@
   }
   .chip.active { background: rgba(140,160,255,0.18); color: #8ca0ff; border-color: #8ca0ff; }
   .search-mode-row { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; }
+  #hospedaje-modal .field-group { margin-top: 0.9rem; }
+  #hospedaje-modal .field-group:first-of-type { margin-top: 1rem; }
+  #hospedaje-modal .field-group > label {
+    display: block; font-size: 0.78rem; font-weight: 600; color: var(--text); margin-bottom: 0.35rem;
+  }
+  #hospedaje-modal .field-group > label .hint { font-weight: 400; color: var(--muted); }
   #hospedaje-modal input[type="text"], #hospedaje-modal input[type="url"], #hospedaje-modal textarea {
     width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);
-    border-radius: 8px; padding: 0.55rem 0.7rem; font-size: 0.9rem; font-family: inherit;
+    border-radius: 8px; padding: 0.6rem 0.75rem; font-size: 0.9rem; font-family: inherit;
+  }
+  #hospedaje-modal input[type="text"]:focus, #hospedaje-modal input[type="url"]:focus, #hospedaje-modal textarea:focus {
+    outline: none; border-color: var(--accent);
   }
   #hospedaje-modal textarea { min-height: 5rem; resize: vertical; }
-  #hospedaje-modal input[type="file"] { color: var(--muted); font-size: 0.82rem; width: 100%; }
+  #hospedaje-modal .file-upload {
+    display: flex; align-items: center; gap: 0.5rem; border: 1px dashed var(--border); border-radius: 8px;
+    padding: 0.6rem 0.75rem; cursor: pointer; color: var(--muted); font-size: 0.85rem;
+    background: var(--bg); transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  #hospedaje-modal .file-upload:hover { border-color: var(--accent); color: var(--text); }
+  #hospedaje-modal .disclaimer-line { margin-top: 0.7rem; }
+  #hospedaje-submit-btn { margin-top: 1rem !important; }
 </style>
 </head>
 <body>
@@ -542,15 +558,36 @@
       <h2>Reportar hospedaje / Airbnb</h2>
       <button id="hospedaje-close" class="sheet-close" aria-label="Cerrar">&times;</button>
     </div>
-    <p class="muted sheet-intro">Para reemplazar el "no le rentes a X" que hoy se pierde en WhatsApp. Tu reporte NO se publica solo — un moderador lo revisa antes de que sea visible.</p>
-    <input type="text" id="hospedaje-name" placeholder="Nombre de la persona (huésped o anfitrión)" required>
-    <input type="url" id="hospedaje-link" placeholder="Link del anuncio de Airbnb (opcional pero recomendado)" style="margin-top:0.5rem;">
-    <textarea id="hospedaje-description" placeholder="¿Qué pasó? Describe la situación." style="margin-top:0.5rem;" required></textarea>
-    <label class="muted" style="display:block; margin-top:0.5rem; font-size:0.82rem;">Evidencia (imagen, ej. captura de conversación) — opcional</label>
-    <input type="file" id="hospedaje-image" accept="image/png,image/jpeg,image/webp" style="margin-top:0.3rem;">
-    <p class="disclaimer-line" style="margin-top:0.6rem;">Este es un reporte de un usuario, pendiente de revisión por un panel — no una acusación confirmada ni un registro oficial. Un reporte falso puede ser tu responsabilidad, no de Radar Urbano. La imagen se guarda de forma privada y solo se muestra un recorte revisado si el reporte se publica.</p>
-    <p class="disclaimer-line">¿Un reporte te menciona injustamente? <a href="mailto:contacto@radarurbano.org?subject=Soy%20la%20persona%20nombrada%20en%20un%20reporte">Escríbenos aquí</a> — respondemos en un máximo de 72 horas.</p>
-    <button id="hospedaje-submit-btn" style="width:100%; margin-top:0.5rem;">Enviar a revisión</button>
+    <p class="muted sheet-intro">Cuéntanos qué pasó. Un moderador revisa cada reporte antes de que se publique — no aparece solo.</p>
+
+    <div class="field-group">
+      <label for="hospedaje-name">Nombre de la persona</label>
+      <input type="text" id="hospedaje-name" placeholder="Huésped o anfitrión" required>
+    </div>
+
+    <div class="field-group">
+      <label for="hospedaje-link">Link del anuncio <span class="hint">(opcional, recomendado)</span></label>
+      <input type="url" id="hospedaje-link" placeholder="https://airbnb.mx/rooms/...">
+    </div>
+
+    <div class="field-group">
+      <label for="hospedaje-description">¿Qué pasó?</label>
+      <textarea id="hospedaje-description" placeholder="Describe la situación con el mayor detalle posible." required></textarea>
+    </div>
+
+    <div class="field-group">
+      <label for="hospedaje-image">Evidencia <span class="hint">(imagen, opcional)</span></label>
+      <label class="file-upload" for="hospedaje-image">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M21.44 11.05l-9.19 9.19a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.19a1.5 1.5 0 0 1-2.12-2.12l8.49-8.48"/></svg>
+        <span id="hospedaje-image-label">Adjuntar captura de conversación</span>
+      </label>
+      <input type="file" id="hospedaje-image" accept="image/png,image/jpeg,image/webp" hidden>
+    </div>
+
+    <p class="disclaimer-line">Reporte pendiente de revisión — no es una acusación confirmada ni un registro oficial. Un reporte falso es tu responsabilidad, no de Radar Urbano. La imagen se guarda en privado; si se publica, solo se muestra un recorte revisado.</p>
+    <p class="disclaimer-line">¿Un reporte te menciona injustamente? <a href="mailto:contacto@radarurbano.org?subject=Soy%20la%20persona%20nombrada%20en%20un%20reporte">Escríbenos aquí</a> — respondemos en máximo 72 horas.</p>
+
+    <button id="hospedaje-submit-btn" style="width:100%;">Enviar a revisión</button>
     <div id="hospedaje-status" class="status-msg"></div>
   </div>
 </div>
@@ -832,8 +869,14 @@
   const hospedajeLink = document.getElementById('hospedaje-link');
   const hospedajeDescription = document.getElementById('hospedaje-description');
   const hospedajeImage = document.getElementById('hospedaje-image');
+  const hospedajeImageLabel = document.getElementById('hospedaje-image-label');
   const hospedajeSubmitBtn = document.getElementById('hospedaje-submit-btn');
   const hospedajeStatus = document.getElementById('hospedaje-status');
+  const HOSPEDAJE_IMAGE_LABEL_DEFAULT = hospedajeImageLabel.textContent;
+
+  hospedajeImage.addEventListener('change', () => {
+    hospedajeImageLabel.textContent = hospedajeImage.files[0]?.name || HOSPEDAJE_IMAGE_LABEL_DEFAULT;
+  });
 
   function openHospedajeModal() {
     hospedajeOverlay.classList.add('open');
@@ -914,6 +957,7 @@
     hospedajeLink.value = '';
     hospedajeDescription.value = '';
     hospedajeImage.value = '';
+    hospedajeImageLabel.textContent = HOSPEDAJE_IMAGE_LABEL_DEFAULT;
     setTimeout(closeHospedajeModal, 1600);
   }
 
