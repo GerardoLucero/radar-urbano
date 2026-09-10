@@ -18,6 +18,7 @@
     --warn: #e3b34a;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html, body {
     margin: 0;
     height: 100%;
@@ -323,6 +324,9 @@
   #use-location-btn {
     width: auto;
     flex: none;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
     background: #12141a;
     border: 1px solid var(--border);
     font-weight: 500;
@@ -454,28 +458,18 @@
   }
   .chip.active { background: rgba(140,160,255,0.18); color: #8ca0ff; border-color: #8ca0ff; }
   .search-mode-row { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; }
-  #hospedaje-modal .field-group { margin-top: 0.9rem; }
-  #hospedaje-modal .field-group:first-of-type { margin-top: 1rem; }
-  #hospedaje-modal .field-group > label {
+  #hospedaje-fields { margin-top: 0.5rem; }
+  #hospedaje-fields .field-group { margin-top: 0.9rem; }
+  #hospedaje-fields .field-group > label {
     display: block; font-size: 0.78rem; font-weight: 600; color: var(--text); margin-bottom: 0.35rem;
   }
-  #hospedaje-modal .field-group > label .hint { font-weight: 400; color: var(--muted); }
-  #hospedaje-modal input[type="text"], #hospedaje-modal input[type="url"], #hospedaje-modal textarea {
-    width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);
-    border-radius: 8px; padding: 0.6rem 0.75rem; font-size: 0.9rem; font-family: inherit;
-  }
-  #hospedaje-modal input[type="text"]:focus, #hospedaje-modal input[type="url"]:focus, #hospedaje-modal textarea:focus {
-    outline: none; border-color: var(--accent);
-  }
-  #hospedaje-modal textarea { min-height: 5rem; resize: vertical; }
-  #hospedaje-modal .file-upload {
+  #hospedaje-fields .field-group > label .hint { font-weight: 400; color: var(--muted); }
+  #hospedaje-fields .file-upload {
     display: flex; align-items: center; gap: 0.5rem; border: 1px dashed var(--border); border-radius: 8px;
-    padding: 0.6rem 0.75rem; cursor: pointer; color: var(--muted); font-size: 0.85rem;
-    background: var(--bg); transition: border-color 0.15s ease, color 0.15s ease;
+    padding: 0.85rem; cursor: pointer; color: var(--muted); font-size: 0.9rem;
+    background: #12141a; transition: border-color 0.15s ease, color 0.15s ease;
   }
-  #hospedaje-modal .file-upload:hover { border-color: var(--accent); color: var(--text); }
-  #hospedaje-modal .disclaimer-line { margin-top: 0.7rem; }
-  #hospedaje-submit-btn { margin-top: 1rem !important; }
+  #hospedaje-fields .file-upload:hover { border-color: var(--accent); color: var(--text); }
 </style>
 </head>
 <body>
@@ -520,10 +514,6 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/></svg>
         <span class="fab-extra">¿Qué tan segura es mi zona?</span><span class="fab-short">¿Segura?</span>
       </button>
-      <button id="hospedaje-open-btn" class="fab-secondary" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v9h14v-9"/></svg>
-        <span class="fab-extra">Hospedaje / Airbnb</span><span class="fab-short">Hospedaje</span>
-      </button>
     </div>
   </div>
 
@@ -552,61 +542,57 @@
   </div>
 </div>
 
-<div id="hospedaje-overlay" class="sheet-overlay">
-  <div id="hospedaje-modal" class="sheet">
-    <div class="modal-header">
-      <h2>Reportar hospedaje / Airbnb</h2>
-      <button id="hospedaje-close" class="sheet-close" aria-label="Cerrar">&times;</button>
-    </div>
-    <p class="muted sheet-intro">Cuéntanos qué pasó. Un moderador revisa cada reporte antes de que se publique — no aparece solo.</p>
-
-    <div class="field-group">
-      <label for="hospedaje-name">Nombre de la persona</label>
-      <input type="text" id="hospedaje-name" placeholder="Huésped o anfitrión" required>
-    </div>
-
-    <div class="field-group">
-      <label for="hospedaje-link">Link del anuncio <span class="hint">(opcional, recomendado)</span></label>
-      <input type="url" id="hospedaje-link" placeholder="https://airbnb.mx/rooms/...">
-    </div>
-
-    <div class="field-group">
-      <label for="hospedaje-description">¿Qué pasó?</label>
-      <textarea id="hospedaje-description" placeholder="Describe la situación con el mayor detalle posible." required></textarea>
-    </div>
-
-    <div class="field-group">
-      <label for="hospedaje-image">Evidencia <span class="hint">(imagen, opcional)</span></label>
-      <label class="file-upload" for="hospedaje-image">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M21.44 11.05l-9.19 9.19a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.19a1.5 1.5 0 0 1-2.12-2.12l8.49-8.48"/></svg>
-        <span id="hospedaje-image-label">Adjuntar captura de conversación</span>
-      </label>
-      <input type="file" id="hospedaje-image" accept="image/png,image/jpeg,image/webp" hidden>
-    </div>
-
-    <p class="disclaimer-line">Reporte pendiente de revisión — no es una acusación confirmada ni un registro oficial. Un reporte falso es tu responsabilidad, no de Radar Urbano. La imagen se guarda en privado; si se publica, solo se muestra un recorte revisado.</p>
-    <p class="disclaimer-line">¿Un reporte te menciona injustamente? <a href="mailto:contacto@radarurbano.org?subject=Soy%20la%20persona%20nombrada%20en%20un%20reporte">Escríbenos aquí</a> — respondemos en máximo 72 horas.</p>
-
-    <button id="hospedaje-submit-btn" style="width:100%;">Enviar a revisión</button>
-    <div id="hospedaje-status" class="status-msg"></div>
-  </div>
-</div>
-
 <div id="report-overlay" class="sheet-overlay">
   <div id="report-modal" class="sheet">
     <div class="modal-header">
-      <h2>Reportar un incidente</h2>
+      <h2>Reportar</h2>
       <button id="report-close" class="sheet-close" aria-label="Cerrar">&times;</button>
     </div>
-    <textarea id="report-description" placeholder="¿Qué pasó? Fraude telefónico, robo, asalto, lo que haya sido — no hace falta elegir categoría, nosotros la detectamos." required></textarea>
-    <input type="tel" id="report-phone" placeholder="Número de teléfono (si aplica)" autocomplete="tel" inputmode="tel" style="margin-top:0.5rem">
-    <div id="location-row">
-      <button id="use-location-btn" type="button">📍 Usar mi ubicación</button>
-      <span id="location-status" class="muted"></span>
+
+    <div class="search-mode-row">
+      <button id="report-mode-incident" class="chip active" type="button">Incidente</button>
+      <button id="report-mode-hospedaje" class="chip" type="button">Hospedaje / Airbnb</button>
     </div>
-    <input type="text" id="report-location-text" placeholder="O escribe la zona/colonia (opcional)">
-    <p class="disclaimer-line" style="margin-top:0.6rem;">Tu reporte se publica sin verificar. No lo uses para dañar a alguien a propósito — un reporte falso puede ser responsabilidad tuya, no de Radar Urbano.</p>
-    <button id="report-btn" style="width:100%; margin-top:0.5rem;">Reportar</button>
+
+    <p class="muted sheet-intro" id="report-intro">Fraude telefónico, robo, asalto, lo que haya sido — no hace falta elegir categoría, nosotros la detectamos.</p>
+
+    <textarea id="report-description" placeholder="¿Qué pasó?" required></textarea>
+
+    <div id="incident-fields">
+      <input type="tel" id="report-phone" placeholder="Número de teléfono (si aplica)" autocomplete="tel" inputmode="tel" style="margin-top:0.5rem">
+      <div id="location-row">
+        <button id="use-location-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 21s-7-6.5-7-11.5A7 7 0 0 1 19 9.5C19 14.5 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+          Usar mi ubicación
+        </button>
+        <span id="location-status" class="muted"></span>
+      </div>
+      <input type="text" id="report-location-text" placeholder="O escribe la zona/colonia (opcional)">
+    </div>
+
+    <div id="hospedaje-fields" hidden>
+      <div class="field-group">
+        <label for="hospedaje-name">Nombre de la persona</label>
+        <input type="text" id="hospedaje-name" placeholder="Huésped o anfitrión">
+      </div>
+      <div class="field-group">
+        <label for="hospedaje-link">Link del anuncio <span class="hint">(opcional, recomendado)</span></label>
+        <input type="url" id="hospedaje-link" placeholder="https://airbnb.mx/rooms/...">
+      </div>
+      <div class="field-group">
+        <label for="hospedaje-image">Evidencia <span class="hint">(imagen, opcional)</span></label>
+        <label class="file-upload" for="hospedaje-image">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M21.44 11.05l-9.19 9.19a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.19a1.5 1.5 0 0 1-2.12-2.12l8.49-8.48"/></svg>
+          <span id="hospedaje-image-label">Adjuntar captura de conversación</span>
+        </label>
+        <input type="file" id="hospedaje-image" accept="image/png,image/jpeg,image/webp" hidden>
+      </div>
+    </div>
+
+    <p class="disclaimer-line" id="report-disclaimer" style="margin-top:0.6rem;">Tu reporte se publica sin verificar. No lo uses para dañar a alguien a propósito — un reporte falso puede ser responsabilidad tuya, no de Radar Urbano.</p>
+    <p class="disclaimer-line" id="hospedaje-contact-line" hidden>¿Un reporte te menciona injustamente? <a href="mailto:contacto@radarurbano.org?subject=Soy%20la%20persona%20nombrada%20en%20un%20reporte">Escríbenos aquí</a> — respondemos en máximo 72 horas.</p>
+
+    <button id="report-submit-btn" style="width:100%; margin-top:0.5rem;">Reportar</button>
     <div id="report-status" class="status-msg"></div>
   </div>
 </div>
@@ -768,13 +754,62 @@
   const reportLocationText = document.getElementById('report-location-text');
   const useLocationBtn = document.getElementById('use-location-btn');
   const locationStatus = document.getElementById('location-status');
-  const reportBtn = document.getElementById('report-btn');
+  const reportSubmitBtn = document.getElementById('report-submit-btn');
   const reportStatus = document.getElementById('report-status');
+  const reportIntro = document.getElementById('report-intro');
+  const reportDisclaimer = document.getElementById('report-disclaimer');
+  const hospedajeContactLine = document.getElementById('hospedaje-contact-line');
+  const incidentFields = document.getElementById('incident-fields');
+  const hospedajeFields = document.getElementById('hospedaje-fields');
+  const reportModeIncidentBtn = document.getElementById('report-mode-incident');
+  const reportModeHospedajeBtn = document.getElementById('report-mode-hospedaje');
+  const hospedajeName = document.getElementById('hospedaje-name');
+  const hospedajeLink = document.getElementById('hospedaje-link');
+  const hospedajeImage = document.getElementById('hospedaje-image');
+  const hospedajeImageLabel = document.getElementById('hospedaje-image-label');
+  const HOSPEDAJE_IMAGE_LABEL_DEFAULT = hospedajeImageLabel.textContent;
 
+  const INCIDENT_DISCLAIMER = 'Tu reporte se publica sin verificar. No lo uses para dañar a alguien a propósito — un reporte falso puede ser responsabilidad tuya, no de Radar Urbano.';
+  const HOSPEDAJE_DISCLAIMER = 'Reporte pendiente de revisión — no es una acusación confirmada ni un registro oficial. Un reporte falso es tu responsabilidad, no de Radar Urbano. La imagen se guarda en privado; si se publica, solo se muestra un recorte revisado.';
+
+  let reportMode = 'incident'; // 'incident' | 'hospedaje'
   let capturedLat = null;
   let capturedLon = null;
 
+  function setReportMode(mode) {
+    reportMode = mode;
+    reportStatus.textContent = '';
+    reportStatus.className = 'status-msg';
+    if (mode === 'incident') {
+      reportModeIncidentBtn.classList.add('active');
+      reportModeHospedajeBtn.classList.remove('active');
+      incidentFields.hidden = false;
+      hospedajeFields.hidden = true;
+      hospedajeContactLine.hidden = true;
+      reportIntro.textContent = 'Fraude telefónico, robo, asalto, lo que haya sido — no hace falta elegir categoría, nosotros la detectamos.';
+      reportDisclaimer.textContent = INCIDENT_DISCLAIMER;
+      reportSubmitBtn.textContent = 'Reportar';
+    } else {
+      reportModeIncidentBtn.classList.remove('active');
+      reportModeHospedajeBtn.classList.add('active');
+      incidentFields.hidden = true;
+      hospedajeFields.hidden = false;
+      hospedajeContactLine.hidden = false;
+      reportIntro.textContent = 'Cuéntanos qué pasó. Un moderador revisa cada reporte antes de que se publique — no aparece solo.';
+      reportDisclaimer.textContent = HOSPEDAJE_DISCLAIMER;
+      reportSubmitBtn.textContent = 'Enviar a revisión';
+    }
+  }
+
+  reportModeIncidentBtn.addEventListener('click', () => setReportMode('incident'));
+  reportModeHospedajeBtn.addEventListener('click', () => setReportMode('hospedaje'));
+
+  hospedajeImage.addEventListener('change', () => {
+    hospedajeImageLabel.textContent = hospedajeImage.files[0]?.name || HOSPEDAJE_IMAGE_LABEL_DEFAULT;
+  });
+
   function openModal() {
+    setReportMode('incident');
     overlay.classList.add('open');
     setTimeout(() => reportDescription.focus(), 50);
   }
@@ -825,7 +860,7 @@
       return;
     }
 
-    reportBtn.disabled = true;
+    reportSubmitBtn.disabled = true;
     reportStatus.textContent = 'Enviando...';
     reportStatus.className = 'status-msg';
 
@@ -836,7 +871,7 @@
 
     const { error } = await supabase.from('reports').insert(payload);
 
-    reportBtn.disabled = false;
+    reportSubmitBtn.disabled = false;
 
     if (error) {
       reportStatus.textContent = error.code === 'rate_limited'
@@ -857,37 +892,9 @@
     setTimeout(closeModal, 1200);
   }
 
-  reportBtn.addEventListener('click', submitReport);
-
-  // --- Hospedaje / Airbnb modal: reporta a una PERSONA por nombre, con evidencia
-  // opcional de imagen. Nunca se auto-publica -- ver submit_named_report() en la
-  // base de datos, que fuerza status='pending' sin importar lo que mande este cliente.
-  const hospedajeOpenBtn = document.getElementById('hospedaje-open-btn');
-  const hospedajeOverlay = document.getElementById('hospedaje-overlay');
-  const hospedajeCloseBtn = document.getElementById('hospedaje-close');
-  const hospedajeName = document.getElementById('hospedaje-name');
-  const hospedajeLink = document.getElementById('hospedaje-link');
-  const hospedajeDescription = document.getElementById('hospedaje-description');
-  const hospedajeImage = document.getElementById('hospedaje-image');
-  const hospedajeImageLabel = document.getElementById('hospedaje-image-label');
-  const hospedajeSubmitBtn = document.getElementById('hospedaje-submit-btn');
-  const hospedajeStatus = document.getElementById('hospedaje-status');
-  const HOSPEDAJE_IMAGE_LABEL_DEFAULT = hospedajeImageLabel.textContent;
-
-  hospedajeImage.addEventListener('change', () => {
-    hospedajeImageLabel.textContent = hospedajeImage.files[0]?.name || HOSPEDAJE_IMAGE_LABEL_DEFAULT;
-  });
-
-  function openHospedajeModal() {
-    hospedajeOverlay.classList.add('open');
-    setTimeout(() => hospedajeName.focus(), 50);
-  }
-  function closeHospedajeModal() { hospedajeOverlay.classList.remove('open'); }
-
-  hospedajeOpenBtn.addEventListener('click', openHospedajeModal);
-  hospedajeCloseBtn.addEventListener('click', closeHospedajeModal);
-  hospedajeOverlay.addEventListener('click', (e) => { if (e.target === hospedajeOverlay) closeHospedajeModal(); });
-
+  // Reportes con nombre (hospedaje/Airbnb) nunca se auto-publican -- ver
+  // submit_named_report() en la base de datos, que fuerza status='pending' sin
+  // importar lo que mande este cliente.
   const HOSPEDAJE_RPC_ERRORS = {
     description_too_short: 'Describe qué pasó con un poco más de detalle.',
     subject_value_required: 'Escribe el nombre de la persona.',
@@ -897,37 +904,37 @@
   async function submitHospedajeReport() {
     const name = hospedajeName.value.trim();
     const link = hospedajeLink.value.trim();
-    const description = hospedajeDescription.value.trim();
+    const description = reportDescription.value.trim();
     const file = hospedajeImage.files[0];
 
     if (name.length < 2) {
-      hospedajeStatus.textContent = 'Escribe el nombre de la persona.';
-      hospedajeStatus.className = 'status-msg status-err';
+      reportStatus.textContent = 'Escribe el nombre de la persona.';
+      reportStatus.className = 'status-msg status-err';
       return;
     }
     if (description.length < 5) {
-      hospedajeStatus.textContent = 'Describe qué pasó.';
-      hospedajeStatus.className = 'status-msg status-err';
+      reportStatus.textContent = 'Describe qué pasó.';
+      reportStatus.className = 'status-msg status-err';
       return;
     }
     if (file && file.size > 8 * 1024 * 1024) {
-      hospedajeStatus.textContent = 'La imagen pesa demasiado (máximo 8MB).';
-      hospedajeStatus.className = 'status-msg status-err';
+      reportStatus.textContent = 'La imagen pesa demasiado (máximo 8MB).';
+      reportStatus.className = 'status-msg status-err';
       return;
     }
 
-    hospedajeSubmitBtn.disabled = true;
-    hospedajeStatus.textContent = 'Enviando...';
-    hospedajeStatus.className = 'status-msg';
+    reportSubmitBtn.disabled = true;
+    reportStatus.textContent = 'Enviando...';
+    reportStatus.className = 'status-msg';
 
     let evidenceStoragePath = null;
     if (file) {
       const path = `pending/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
       const { error: uploadError } = await supabase.storage.from('evidence-private').upload(path, file);
       if (uploadError) {
-        hospedajeSubmitBtn.disabled = false;
-        hospedajeStatus.textContent = 'No se pudo subir la imagen. Intenta de nuevo o envía el reporte sin ella.';
-        hospedajeStatus.className = 'status-msg status-err';
+        reportSubmitBtn.disabled = false;
+        reportStatus.textContent = 'No se pudo subir la imagen. Intenta de nuevo o envía el reporte sin ella.';
+        reportStatus.className = 'status-msg status-err';
         return;
       }
       evidenceStoragePath = path;
@@ -942,26 +949,29 @@
       p_evidence_storage_path: evidenceStoragePath,
     });
 
-    hospedajeSubmitBtn.disabled = false;
+    reportSubmitBtn.disabled = false;
 
     if (error) {
       const key = Object.keys(HOSPEDAJE_RPC_ERRORS).find((k) => error.message?.includes(k));
-      hospedajeStatus.textContent = key ? HOSPEDAJE_RPC_ERRORS[key] : 'No se pudo enviar el reporte. Intenta de nuevo.';
-      hospedajeStatus.className = 'status-msg status-err';
+      reportStatus.textContent = key ? HOSPEDAJE_RPC_ERRORS[key] : 'No se pudo enviar el reporte. Intenta de nuevo.';
+      reportStatus.className = 'status-msg status-err';
       return;
     }
 
-    hospedajeStatus.textContent = 'Reporte enviado a revisión. Un moderador lo revisa antes de publicarlo.';
-    hospedajeStatus.className = 'status-msg status-ok';
+    reportStatus.textContent = 'Reporte enviado a revisión. Un moderador lo revisa antes de publicarlo.';
+    reportStatus.className = 'status-msg status-ok';
     hospedajeName.value = '';
     hospedajeLink.value = '';
-    hospedajeDescription.value = '';
+    reportDescription.value = '';
     hospedajeImage.value = '';
     hospedajeImageLabel.textContent = HOSPEDAJE_IMAGE_LABEL_DEFAULT;
-    setTimeout(closeHospedajeModal, 1600);
+    setTimeout(closeModal, 1600);
   }
 
-  hospedajeSubmitBtn.addEventListener('click', submitHospedajeReport);
+  reportSubmitBtn.addEventListener('click', () => {
+    if (reportMode === 'incident') submitReport();
+    else submitHospedajeReport();
+  });
 
   // --- Map (elemento dominante de la pantalla) ---
   async function loadMap() {
