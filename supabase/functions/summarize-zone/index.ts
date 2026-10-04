@@ -4,7 +4,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SECRET_KEYS = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') ?? '{}')
 const SERVICE_KEY = SUPABASE_SECRET_KEYS['default'] ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const NVIDIA_NIM_API_KEY = Deno.env.get('NVIDIA_NIM_API_KEY')
-const NIM_MODEL = 'deepseek-ai/deepseek-v4-flash-0731'
+const NIM_MODEL = 'deepseek-ai/deepseek-v4.1-flash'
 const MAX_REPORTS = 15
 const BOX = 0.15 // ~15km, "esta zona" -- mismo rango que usaba el cliente antes
 
@@ -163,35 +163,61 @@ Escribe 2-3 frases cortas en espanol neutro de Mexico. El tono correcto es el de
 
   // NIM a veces responde 529 "temporarily overloaded" -- transitorio, un reintento
   // corto lo resuelve la mayoria de las veces en vez de mostrarle el error al usuario.
+  // Tambien a veces no responde nada (cuelga la conexion) -- esta es una llamada
+  // directa del navegador, asi que sin timeout propio el usuario se queda esperando
+  // hasta que la plataforma mata la funcion con un error crudo en vez del fallback.
+  const NIM_TIMEOUT_MS = 12000
   async function callNimOnce() {
-    return fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${NVIDIA_NIM_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: NIM_MODEL,
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.3,
-        max_tokens: 200,
-      }),
-    })
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), NIM_TIMEOUT_MS)
+    try {
+      return await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${NVIDIA_NIM_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: NIM_MODEL,
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.3,
+          max_tokens: 200,
+        }),
+        signal: controller.signal,
+      })
+    } finally {
+      clearTimeout(timeout)
+    }
   }
 
-  let nimRes = await callNimOnce()
+  const fallbackResponse = () =>
+    new Response(JSON.stringify({ title, tone, summary: 'No se pudo generar el resumen. Intenta de nuevo.' }), {
+      status: 200,
+      headers: { ...headers, 'Content-Type': 'application/json' },
+    })
+
+  let nimRes: Response
+  try {
+    nimRes = await callNimOnce()
+  } catch (e) {
+    console.error('NIM fetch failed or timed out', e)
+    return fallbackResponse()
+  }
+
   if (!nimRes.ok && (nimRes.status === 529 || nimRes.status === 503)) {
     console.warn(`NIM overloaded (${nimRes.status}), retrying once...`)
     await new Promise((r) => setTimeout(r, 1200))
-    nimRes = await callNimOnce()
+    try {
+      nimRes = await callNimOnce()
+    } catch (e) {
+      console.error('NIM retry fetch failed or timed out', e)
+      return fallbackResponse()
+    }
   }
 
   if (!nimRes.ok) {
     console.error('NIM error', await nimRes.text())
-    return new Response(JSON.stringify({ title, tone, summary: 'No se pudo generar el resumen. Intenta de nuevo.' }), {
-      status: 200,
-      headers: { ...headers, 'Content-Type': 'application/json' },
-    })
+    return fallbackResponse()
   }
 
   const nimData = await nimRes.json()

@@ -7,13 +7,21 @@ const NVIDIA_NIM_API_KEY = Deno.env.get('NVIDIA_NIM_API_KEY')
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const ALERT_EMAIL = Deno.env.get('ALERT_EMAIL')
 const FUNCTION_SECRET = Deno.env.get('FUNCTION_SECRET')
-const NIM_MODEL = 'deepseek-ai/deepseek-v4-flash-0731'
+const NIM_MODEL = 'deepseek-ai/deepseek-v4.1-flash'
 
 const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_KEY)
 
-async function callNim(prompt: string): Promise<any | null> {
-  const doFetch = () =>
-    fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+const NIM_TIMEOUT_MS = 12000
+
+// NIM a veces no responde en absoluto (cuelga la conexion) en vez de devolver un
+// error -- sin timeout propio, Deno espera hasta que la plataforma mata la funcion
+// entera por limite de recursos, y el reporte se queda sin procesar sin razon clara
+// en los logs. Con AbortController fallamos rapido y caemos al mismo null de siempre.
+async function doFetch(prompt: string): Promise<Response> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), NIM_TIMEOUT_MS)
+  try {
+    return await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${NVIDIA_NIM_API_KEY}`,
@@ -25,15 +33,33 @@ async function callNim(prompt: string): Promise<any | null> {
         temperature: 0.1,
         max_tokens: 200,
       }),
+      signal: controller.signal,
     })
+  } finally {
+    clearTimeout(timeout)
+  }
+}
 
-  let res = await doFetch()
+async function callNim(prompt: string): Promise<any | null> {
+  let res: Response
+  try {
+    res = await doFetch(prompt)
+  } catch (e) {
+    console.error('NIM fetch failed or timed out', e)
+    return null
+  }
+
   // NIM a veces responde 529 "temporarily overloaded" -- transitorio, un reintento
   // corto evita que un reporte se quede sin clasificar por mala suerte de timing.
   if (!res.ok && (res.status === 529 || res.status === 503)) {
     console.warn(`NIM overloaded (${res.status}), retrying once...`)
     await new Promise((r) => setTimeout(r, 1200))
-    res = await doFetch()
+    try {
+      res = await doFetch(prompt)
+    } catch (e) {
+      console.error('NIM retry fetch failed or timed out', e)
+      return null
+    }
   }
 
   if (!res.ok) {
