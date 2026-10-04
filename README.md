@@ -28,7 +28,7 @@ Vertical agregado el 2026-09-09 para reemplazar el "no le rentes a X" que hoy se
 
 - Frontend: HTML/JS estático en GitHub Pages, dominio propio `radarurbano.org` detrás de Cloudflare (WAF + proxy, origen nunca expuesto)
 - Datos: Supabase (Postgres + RLS) — proyecto `ifcgwnbaiozuvjorkcoc`
-- IA (NVIDIA NIM, modelo `deepseek-ai/deepseek-v4-flash-0731`), usos distintos:
+- IA (NVIDIA NIM, modelo `deepseek-ai/deepseek-v4.1-flash`), usos distintos:
   - **Clasificación + extracción de entidades**: todo reporte nuevo se etiqueta solo (categoría abierta, no un catálogo fijo) y se le extraen hora del día / arma / vehículo mencionados, sin pedirle más campos al usuario
   - **Corroboración** (solo fraude telefónico, que tiene una identidad natural — el número): compara descripciones de reportes repetidos del mismo número; si contradicen entre sí, el reporte pasa a revisión manual en vez de publicarse directo
   - **Fusión de duplicados** (incidentes físicos): reportes muy cercanos en tiempo/lugar se comparan por texto; si describen el mismo evento, se enlazan (`duplicate_of`) en vez de aparecer como puntos repetidos
