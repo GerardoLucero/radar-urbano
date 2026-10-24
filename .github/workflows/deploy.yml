@@ -71,4 +71,4 @@ jobs:
           fi
           curl -fsS --max-time 20 -o /dev/null \
             -H "apikey: $SUPABASE_ANON_KEY" \
-            "$SUPABASE_URL/rest/v1/lada_coordinates?select=lada&limit=1" || { echo "La API de Supabase no responde"; exit 1; }
+            "$SUPABASE_URL/rest/v1/lada_coordinates?select=code&limit=1" || { echo "La API de Supabase no responde"; exit 1; }
