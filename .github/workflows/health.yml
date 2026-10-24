@@ -61,11 +61,11 @@ jobs:
       - name: Consulta barata
         run: |
           if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "::warning::SUPABASE_URL/SUPABASE_ANON_KEY no configurados; keep-alive omitido"; exit 0
+            echo "::error::SUPABASE_URL/SUPABASE_ANON_KEY no configurados; el keep-alive no esta protegiendo el proyecto"; exit 1
           fi
           if ! curl -fsS --max-time 20 -o /dev/null \
               -H "apikey: $SUPABASE_ANON_KEY" -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-              "$SUPABASE_URL/rest/v1/lada_coordinates?select=lada&limit=1"; then
+              "$SUPABASE_URL/rest/v1/lada_coordinates?select=code&limit=1"; then
             [ -z "$NTFY_TOPIC" ] || curl -fsS --max-time 15 -H "Title: Keep-alive Supabase fallo" -H "Priority: high" \
               -d "El keep-alive diario fallo. Revisar si el proyecto esta pausado." "https://ntfy.sh/$NTFY_TOPIC" || true
             exit 1

@@ -95,3 +95,10 @@ Verificar tras cualquier cambio de DNS o de proxy:
 - `health.yml` revisa el sitio (y `/health` si hay `SUPABASE_HEALTH_URL`) cada 15 minutos y avisa por ntfy solo si falla.
 - Keep-alive diario evita la pausa del proyecto Supabase por inactividad.
 - `backup.yml` corre cada noche; si falla, avisa por ntfy. Revisar a mano que el último artefacto no tenga más de 2 días.
+
+## Cambiar el modelo de IA sin redesplegar
+- Editar `models.json` en `main` (lista ordenada por proveedor). Las funciones lo leen de GitHub con cache de 5 min; si no responde usan la lista del codigo (`_shared/model-config.ts`).
+- Si un modelo falla (404/410) se prueba el siguiente de la lista, luego el otro proveedor.
+- Anulacion de emergencia: secrets `GROQ_MODEL` / `NIM_MODEL` en Supabase (se anteponen). `MODEL_CONFIG_URL=off` desactiva la lectura remota.
+- El workflow `Models check` prueba cada modelo a diario y avisa por ntfy; necesita los secrets `GROQ_API_KEY`, `NVIDIA_NIM_API_KEY` y `NTFY_TOPIC` en GitHub.
+- El keep-alive de `health.yml` falla (en rojo) si faltan `SUPABASE_URL` / `SUPABASE_ANON_KEY`.
