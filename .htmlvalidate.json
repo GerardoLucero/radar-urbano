@@ -4,6 +4,7 @@
     "void-style": "off",
     "no-inline-style": "off",
     "no-implicit-button-type": "off",
-    "prefer-native-element": "off"
+    "prefer-native-element": "off",
+    "attribute-empty-style": "off"
   }
 }
