@@ -1,0 +1,63 @@
+name: Backup
+
+on:
+  schedule:
+    - cron: '23 8 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+    steps:
+      - name: Verificar secretos
+        id: gate
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ] || [ -z "$BACKUP_AGE_RECIPIENT" ]; then
+            echo "::warning::Faltan SUPABASE_DB_URL o BACKUP_AGE_RECIPIENT; backup omitido (ver docs/restore.md)"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Instalar herramientas
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client age
+          pg_dump --version
+      - name: pg_dump cifrado
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          umask 077
+          stamp=$(date -u +%Y%m%dT%H%M%SZ)
+          pg_dump --no-owner --no-privileges --schema=public --format=custom "$SUPABASE_DB_URL" \
+            | age -r "$BACKUP_AGE_RECIPIENT" -o "radar-urbano-$stamp.dump.age"
+          test -s "radar-urbano-$stamp.dump.age"
+          sha256sum "radar-urbano-$stamp.dump.age" > "radar-urbano-$stamp.dump.age.sha256"
+          ls -l radar-urbano-*
+      - name: Subir artefacto (retencion 14 dias)
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: db-backup
+          path: radar-urbano-*
+          retention-days: 14
+          if-no-files-found: error
+      - name: Avisar si fallo
+        if: failure() && env.NTFY_TOPIC != ''
+        run: |
+          curl -fsS --max-time 15 -H "Title: Backup fallo" -H "Priority: high" \
+            -d "El backup nocturno fallo. Ver ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            "https://ntfy.sh/$NTFY_TOPIC" || true

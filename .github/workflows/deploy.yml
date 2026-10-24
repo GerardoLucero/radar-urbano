@@ -3,6 +3,14 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'supabase/**'
+      - '.github/dependabot.yml'
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/health.yml'
+      - '.github/workflows/backup.yml'
 
 permissions:
   contents: read
@@ -20,10 +28,41 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+      - name: Armar _site con lo estrictamente necesario
+        run: bash .github/scripts/build-site.sh
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
         with:
-          path: '.'
+          path: '_site'
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+
+  smoke:
+    name: Smoke test
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sitio responde y contiene el titulo
+        run: |
+          ok=0
+          for i in 1 2 3 4 5 6; do
+            if curl -fsSL --max-time 20 "https://radarurbano.org/?cb=${GITHUB_SHA}" -o page.html \
+               && grep -q "<title>Radar Urbano" page.html; then ok=1; break; fi
+            echo "Intento $i fallido; reintento en 20s (cache/propagacion)"; sleep 20
+          done
+          [ "$ok" = 1 ] || { echo "El sitio no respondio con el titulo esperado"; exit 1; }
+          for p in privacidad.html terminos.html arco.html sitemap.xml robots.txt; do
+            curl -fsS --max-time 20 -o /dev/null "https://radarurbano.org/$p"
+          done
+      - name: API (Supabase), solo si hay secretos
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::notice::Sin SUPABASE_URL/SUPABASE_ANON_KEY; se omite el chequeo de API"; exit 0
+          fi
+          curl -fsS --max-time 20 -o /dev/null \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            "$SUPABASE_URL/rest/v1/lada_coordinates?select=lada&limit=1" || { echo "La API de Supabase no responde"; exit 1; }

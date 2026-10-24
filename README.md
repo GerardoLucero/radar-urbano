@@ -4,7 +4,7 @@ Radar comunitario de seguridad en México: fraudes telefónicos, robos, asaltos 
 
 ## Cómo funciona
 
-- **Buscar**: escribe un número y ve si ya lo reportaron, con un score de confianza (Wilson score sobre reportes únicos).
+- **Buscar**: escribe un número y ve si ya lo reportaron, con un score de confianza (una cota que crece con el conteo de reportes únicos; no es un intervalo de Wilson clásico).
 - **Reportar**: describe qué pasó — nada más. Sin dropdown de categorías, sin registro. La IA decide sola de qué tipo de incidente se trata a partir del texto.
 - **Ubicación**: para incidentes sin número (robo, asalto), un botón usa el GPS del navegador (difuminado a ~1km antes de guardarse); si no hay permiso, una zona/colonia escrita a mano se geocodifica del lado del servidor.
 - **Seguridad de mi zona**: botón flotante que centra el mapa en tu ubicación real y genera un resumen en lenguaje natural (IA) de lo reportado cerca — usa reportes en vivo si los hay, y si no, cae en el contexto histórico oficial (SESNSP) de tu municipio en vez de decir "no sabemos nada".
@@ -35,8 +35,10 @@ Vertical agregado el 2026-09-09 para reemplazar el "no le rentes a X" que hoy se
   - **Resumen de zona**: bajo demanda, resume en 2-3 frases los reportes cercanos a una ubicación
 - Geocoding: Nominatim (OpenStreetMap) del lado del servidor, tanto para el seed de LADAs como para `location_text` cuando no hay GPS
 - Contexto de incidencia delictiva oficial (SESNSP): tablas `municipio_coordinates` + `sesnsp_municipal_crime`, top 400 municipios por volumen de delitos (no los ~2478 exhaustivos — la mayoría son poblados de cientos de habitantes irrelevantes para el mapa). Fuente: espejo comunitario en GitHub ([lapanquecita/incidencia-delictiva](https://github.com/lapanquecita/incidencia-delictiva)) porque los endpoints oficiales (datos.gob.mx, gob.mx/sesnsp) bloquean tráfico automatizado (Akamai WAF, links de SharePoint frágiles). `pg_cron` + Edge Function `ingest-sesnsp` refrescan esto automáticamente el día 3 de cada mes a las 09:00 UTC
-- Confianza: Wilson score confidence interval sobre reportes únicos por número
-- Deploy: GitHub Actions → GitHub Pages en cada push a `main`
+- Confianza: puntaje acotado según el conteo de reportes únicos por número. Es una cota por conteo, no un intervalo de confianza de Wilson clásico; no debe leerse como probabilidad
+- Deploy: GitHub Actions publica en GitHub Pages, en cada push a `main`, solo el contenido de `_site/` (página, `CNAME`, páginas legales, sitemap, robots); no se publican README, docs, `supabase/` ni `.github/`. Un smoke test posterior comprueba el sitio
+- CI en cada PR: html-validate, sintaxis del JS embebido, gitleaks, `deno check` de las funciones y validación del sitemap. Acciones fijadas por SHA de commit y actualizadas por Dependabot
+- Operación: monitoreo con ntfy (`health.yml`, cada 15 min), keep-alive diario de Supabase y backup nocturno cifrado (`backup.yml`). Ver `RUNBOOK.md` y `docs/restore.md`
 - Anti-abuso: rate limit de 8 reportes/hora por IP (PostgREST `pgrst.db_pre_request`) + `ip_hash` (sha256 + salt, nunca la IP cruda) en cada reporte para detectar patrones de la misma fuente
 
 ## Estado
@@ -51,6 +53,29 @@ Vertical agregado el 2026-09-09 para reemplazar el "no le rentes a X" que hoy se
 - [x] Recencia visual + heatmap + confirmación de duplicados en el mapa
 - [x] Capa de contexto SESNSP: 400 municipios, carga inicial hecha + `pg_cron` mensual (`ingest-sesnsp`), verificado end-to-end
 - [ ] Mostrar la capa SESNSP en el mapa del frontend (los datos ya están en la base, falta el layer visual)
-- [ ] **Revisión de `legal-lead` sobre riesgo de difamación — pendiente, sitio ya público con reportes reales**
+- [x] Borradores de aviso de privacidad, términos y procedimiento ARCO (`privacidad.html`, `terminos.html`, `arco.html`)
+- [ ] **Revisión por un abogado de los borradores legales y del riesgo de difamación — pendiente, sitio ya público con reportes reales**
+- [x] CI, monitoreo y backups cifrados definidos en `.github/workflows/`
+- [ ] Configurar los secretos de CI (ver más abajo) y el checklist de Cloudflare de `RUNBOOK.md`
 - [ ] Activar "Enforce HTTPS" en GitHub Pages cuando el certificado de origen termine de emitirse
 - [ ] Clustering de marcadores (diferido hasta que haya más volumen de reportes reales)
+
+## Documentos legales y operativos
+
+- Borradores: [aviso de privacidad](https://radarurbano.org/privacidad.html), [términos](https://radarurbano.org/terminos.html), [derechos ARCO](https://radarurbano.org/arco.html)
+- `MODERATION.md`: protocolo de moderación, baja, apelación y bitácora
+- `RUNBOOK.md`: restauración, rotación de secretos, incidentes, checklist de Cloudflare
+- `docs/restore.md`: restauración de prueba del backup
+
+## Secretos de CI
+
+Se configuran en GitHub > Settings > Secrets and variables > Actions. Todos son opcionales: si faltan, el paso correspondiente se omite con un aviso.
+
+| Secreto | Usado por | Para qué |
+|---|---|---|
+| `NTFY_TOPIC` | health, backup | Tópico de ntfy para avisos de caída (sin datos personales) |
+| `SUPABASE_HEALTH_URL` | health | URL de la función `/health` |
+| `SUPABASE_URL` | health, deploy | Keep-alive diario y smoke test de API |
+| `SUPABASE_ANON_KEY` | health, deploy | Llave anon para la consulta barata |
+| `SUPABASE_DB_URL` | backup | Cadena de conexión para `pg_dump` |
+| `BACKUP_AGE_RECIPIENT` | backup | Clave pública `age` con la que se cifra el volcado |
