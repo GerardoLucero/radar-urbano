@@ -1,0 +1,72 @@
+name: Health
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+    - cron: '17 9 * * *'   # keep-alive diario
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: health-${{ github.event.schedule || 'manual' }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Sitio y funcion health
+    if: github.event_name != 'schedule' || github.event.schedule == '*/15 * * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      SUPABASE_HEALTH_URL: ${{ secrets.SUPABASE_HEALTH_URL }}
+    steps:
+      - name: Comprobar
+        id: probe
+        run: |
+          fail=""
+          curl -fsS --max-time 20 -o /dev/null https://radarurbano.org/ || fail="sitio"
+          if [ -n "$SUPABASE_HEALTH_URL" ]; then
+            curl -fsS --max-time 20 -o /dev/null "$SUPABASE_HEALTH_URL" || fail="$fail health"
+          fi
+          echo "fail=$fail" >> "$GITHUB_OUTPUT"
+          [ -z "$fail" ] || echo "::error::Fallo:$fail"
+      - name: Avisar por ntfy (solo si falla)
+        if: steps.probe.outputs.fail != ''
+        run: |
+          if [ -z "$NTFY_TOPIC" ]; then
+            echo "::warning::NTFY_TOPIC no configurado; no se puede avisar"; exit 0
+          fi
+          curl -fsS --max-time 15 \
+            -H "Title: Radar Urbano caido" -H "Priority: high" -H "Tags: warning" \
+            -d "Fallo:${{ steps.probe.outputs.fail }}. Ver ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            "https://ntfy.sh/$NTFY_TOPIC"
+      - name: Marcar el run como fallido
+        if: steps.probe.outputs.fail != ''
+        run: exit 1
+
+  keepalive:
+    name: Keep-alive de Supabase
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '17 9 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+    steps:
+      - name: Consulta barata
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::warning::SUPABASE_URL/SUPABASE_ANON_KEY no configurados; keep-alive omitido"; exit 0
+          fi
+          if ! curl -fsS --max-time 20 -o /dev/null \
+              -H "apikey: $SUPABASE_ANON_KEY" -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+              "$SUPABASE_URL/rest/v1/lada_coordinates?select=lada&limit=1"; then
+            [ -z "$NTFY_TOPIC" ] || curl -fsS --max-time 15 -H "Title: Keep-alive Supabase fallo" -H "Priority: high" \
+              -d "El keep-alive diario fallo. Revisar si el proyecto esta pausado." "https://ntfy.sh/$NTFY_TOPIC" || true
+            exit 1
+          fi
+          echo "Keep-alive OK"
