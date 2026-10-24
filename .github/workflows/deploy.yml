@@ -42,7 +42,10 @@ jobs:
     name: Smoke test
     needs: deploy
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Sitio responde y contiene el titulo
         run: |
           ok=0
