@@ -3,6 +3,7 @@
 // Adaptado de cv-stress-test/src/sdk/model-provider.ts.
 
 import { z } from 'npm:zod@3.25.76'
+import { getModelConfig } from './model-config.ts'
 
 export type ProviderName = 'groq' | 'nim'
 
@@ -85,6 +86,13 @@ export function configuredProviders(deps: LlmDeps = {}): ProviderConfig[] {
   const nimKey = env('NVIDIA_NIM_API_KEY')
   if (nimKey) out.push({ name: 'nim', url: NIM_URL, key: nimKey, model: env('NIM_MODEL') || DEFAULT_NIM_MODEL })
   return out
+}
+
+/** Un candidato por (proveedor, modelo), en el orden de models.json. */
+export async function configuredCandidates(deps: LlmDeps = {}): Promise<ProviderConfig[]> {
+  const providers = configuredProviders(deps)
+  const config = await getModelConfig({ now: deps.now, getEnv: deps.getEnv })
+  return providers.flatMap((p) => (p.name === 'groq' ? config.groq : config.nim).map((model) => ({ ...p, model })))
 }
 
 export function hasLlmProvider(deps: LlmDeps = {}): boolean {
@@ -220,7 +228,7 @@ export async function generateJson<S extends z.ZodTypeAny>(
   schema: S,
   deps: LlmDeps = {},
 ): Promise<GenerateResult<z.infer<S>>> {
-  const providers = configuredProviders(deps)
+  const providers = await configuredCandidates(deps)
   if (providers.length === 0) throw new LlmError('no_provider', 'no LLM API key configured')
 
   const d = {
@@ -247,14 +255,14 @@ export async function generateJson<S extends z.ZodTypeAny>(
     const roundOpts = round === 0 ? opts : { ...opts, temperature: 0 }
     for (const p of order) {
       if (deadline - d.now() < MIN_CALL_MS) {
-        failures.push(`${p.name}:budget`)
+        failures.push(`${p.name}/${p.model}:budget`)
         continue
       }
       let text: string
       try {
         text = await callWithRetry(p, messages, roundOpts, deadline, d)
       } catch (e) {
-        failures.push(`${p.name}:${describe(e)}`)
+        failures.push(`${p.name}/${p.model}:${describe(e)}`)
         continue
       }
       try {
@@ -262,7 +270,7 @@ export async function generateJson<S extends z.ZodTypeAny>(
         return { data, provider: p.name, model: p.model }
       } catch (e) {
         sawInvalid = true
-        failures.push(`${p.name}:${describe(e)}`)
+        failures.push(`${p.name}/${p.model}:${describe(e)}`)
       }
     }
     if (deadline - d.now() < MIN_CALL_MS) break
