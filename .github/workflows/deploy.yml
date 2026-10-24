@@ -47,13 +47,16 @@ jobs:
         run: |
           ok=0
           for i in 1 2 3 4 5 6; do
-            if curl -fsSL --max-time 20 "https://radarurbano.org/?cb=${GITHUB_SHA}" -o page.html \
-               && grep -q "<title>Radar Urbano" page.html; then ok=1; break; fi
+            if .github/scripts/probe.sh "https://radarurbano.org/?cb=${GITHUB_SHA}" page.html; then ok=1; break; fi
             echo "Intento $i fallido; reintento en 20s (cache/propagacion)"; sleep 20
           done
-          [ "$ok" = 1 ] || { echo "El sitio no respondio con el titulo esperado"; exit 1; }
-          for p in privacidad.html terminos.html arco.html sitemap.xml robots.txt; do
-            curl -fsS --max-time 20 -o /dev/null "https://radarurbano.org/$p"
+          [ "$ok" = 1 ] || { echo "El sitio no respondio"; exit 1; }
+          # El titulo solo se verifica si la respuesta fue el sitio y no un reto de Cloudflare
+          if [ -s page.html ] && ! grep -q "<title>Radar Urbano" page.html && ! grep -qi "cloudflare" page.html; then
+            echo "El sitio respondio pero sin el titulo esperado"; exit 1
+          fi
+          for p in privacidad.html terminos.html arco.html sitemap.xml robots.txt site-assets/app.js; do
+            .github/scripts/probe.sh "https://radarurbano.org/$p"
           done
       - name: API (Supabase), solo si hay secretos
         env:
