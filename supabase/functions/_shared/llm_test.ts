@@ -3,7 +3,8 @@ import { z } from 'npm:zod@3.25.76'
 import { configuredProviders, extractJson, generateJson, LlmError } from './llm.ts'
 
 const Schema = z.object({ ok: z.boolean() })
-const env = (vars: Record<string, string>) => (k: string) => vars[k]
+// MODEL_CONFIG_URL=off: los tests no deben consultar models.json en GitHub.
+const env = (vars: Record<string, string>) => (k: string) => ({ MODEL_CONFIG_URL: 'off', ...vars })[k]
 const BOTH = env({ GROQ_API_KEY: 'g', NVIDIA_NIM_API_KEY: 'n' })
 
 const completion = (content: string) =>
@@ -173,4 +174,15 @@ Deno.test('generateJson: las instrucciones van en system y el dato en user', asy
   assertEquals(sys.role, 'system')
   assert(sys.content.startsWith('REGLAS'))
   assertEquals(usr, { role: 'user', content: '<reporte>x</reporte>' })
+})
+
+Deno.test('cascada: si el primer modelo de Groq esta retirado (404) usa el siguiente de la lista', async () => {
+  const { impl, calls } = fakeFetch((c) => (c.body.model === 'retired/model' ? new Response('{}', { status: 404 }) : completion('{"ok":true}')))
+  const r = await generateJson(opts, Schema, {
+    fetchImpl: impl,
+    ...instant,
+    getEnv: env({ GROQ_API_KEY: 'g', GROQ_MODEL: 'retired/model' }),
+  })
+  assertEquals(r.model, 'openai/gpt-oss-120b')
+  assertEquals(calls.map((c) => c.body.model), ['retired/model', 'openai/gpt-oss-120b'])
 })
