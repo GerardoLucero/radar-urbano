@@ -23,13 +23,14 @@ jobs:
       NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
       SUPABASE_HEALTH_URL: ${{ secrets.SUPABASE_HEALTH_URL }}
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Comprobar
         id: probe
         run: |
           fail=""
-          curl -fsS --max-time 20 -o /dev/null https://radarurbano.org/ || fail="sitio"
+          .github/scripts/probe.sh https://radarurbano.org/ || fail="sitio"
           if [ -n "$SUPABASE_HEALTH_URL" ]; then
-            curl -fsS --max-time 20 -o /dev/null "$SUPABASE_HEALTH_URL" || fail="$fail health"
+            .github/scripts/probe.sh "$SUPABASE_HEALTH_URL" || fail="$fail health"
           fi
           echo "fail=$fail" >> "$GITHUB_OUTPUT"
           [ -z "$fail" ] || echo "::error::Fallo:$fail"
