@@ -8,9 +8,10 @@ for f in index.html CNAME privacidad.html terminos.html arco.html sitemap.xml ro
   cp "$f" _site/
 done
 # Carpetas de assets estaticos, solo si existen
-for d in assets img images static; do
+for d in site-assets assets img images static; do
   if [ -d "$d" ]; then cp -R "$d" "_site/$d"; fi
 done
+[ -f _site/site-assets/app.js ] || { echo "Falta site-assets/app.js en _site" >&2; exit 1; }
 touch _site/.nojekyll
 echo "Contenido de _site:"
 find _site -type f | sort
