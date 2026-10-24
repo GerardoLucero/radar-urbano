@@ -4,7 +4,39 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Radar Urbano — reporta y consulta fraudes, robos y asaltos cerca de ti</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://esm.sh; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://unpkg.com; connect-src https://ifcgwnbaiozuvjorkcoc.supabase.co wss://ifcgwnbaiozuvjorkcoc.supabase.co; font-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+<meta name="description" content="Mapa ciudadano para reportar y consultar fraudes telefónicos, robos y asaltos cerca de ti. Busca un número antes de contestar o pagar. Reportes de usuarios, sin verificar.">
+<meta name="theme-color" content="#0f1115">
+<link rel="canonical" href="https://radarurbano.org/">
+<link rel="icon" type="image/svg+xml" href="/site-assets/favicon.svg">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Radar Urbano">
+<meta property="og:locale" content="es_MX">
+<meta property="og:title" content="Radar Urbano: reporta y consulta fraudes, robos y asaltos cerca de ti">
+<meta property="og:description" content="Mapa ciudadano para reportar y consultar fraudes telefónicos, robos y asaltos cerca de ti. Busca un número antes de contestar o pagar. Reportes de usuarios, sin verificar.">
+<meta property="og:url" content="https://radarurbano.org/">
+<meta property="og:image" content="https://radarurbano.org/site-assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Radar Urbano: reporta y consulta fraudes, robos y asaltos cerca de ti">
+<meta name="twitter:description" content="Mapa ciudadano para reportar y consultar fraudes telefónicos, robos y asaltos cerca de ti. Busca un número antes de contestar o pagar. Reportes de usuarios, sin verificar.">
+<meta name="twitter:image" content="https://radarurbano.org/site-assets/og.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Radar Urbano",
+  "url": "https://radarurbano.org/",
+  "inLanguage": "es-MX",
+  "description": "Mapa ciudadano para reportar y consultar fraudes telefónicos, robos y asaltos."
+}
+</script>
+<link rel="preconnect" href="https://ifcgwnbaiozuvjorkcoc.supabase.co" crossorigin>
+<link rel="preconnect" href="https://a.tile.openstreetmap.org" crossorigin>
+<link rel="preconnect" href="https://esm.sh" crossorigin>
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
   :root {
     --bg: #0f1115;
@@ -38,9 +70,30 @@
     justify-content: space-between;
     gap: 0.9rem;
     padding: 0.55rem 1rem;
+    padding-left: calc(1rem + env(safe-area-inset-left));
+    padding-right: calc(1rem + env(safe-area-inset-right));
     background: var(--card);
     border-bottom: 1px solid var(--border);
     z-index: 20;
+  }
+  #share-btn {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0 0.8rem;
+    font-size: 0.85rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  #share-btn:hover { background: #232730; }
+  #share-btn svg { width: 16px; height: 16px; flex: none; }
+  @media (max-width: 420px) {
+    #share-btn .share-text { display: none; }
+    #share-btn { padding: 0 0.7rem; }
   }
   header h1 {
     font-size: 1rem;
@@ -50,17 +103,31 @@
     white-space: nowrap;
   }
 
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: -1px; padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   footer {
     flex: 0 0 auto;
-    padding: 0.3rem 1rem;
-    font-size: 0.68rem;
-    line-height: 1.4;
+    padding: 0.3rem 1rem calc(0.3rem + env(safe-area-inset-bottom));
+    padding-left: calc(1rem + env(safe-area-inset-left));
+    padding-right: calc(1rem + env(safe-area-inset-right));
+    font-size: 0.75rem;
+    line-height: 1.5;
     color: var(--muted);
     text-align: center;
     background: var(--card);
     border-top: 1px solid var(--border);
   }
-  footer a { color: var(--muted); }
+  footer a { color: var(--muted); display: inline-block; padding: 0.2rem 0.1rem; }
+  footer .footer-links { margin-top: 0.1rem; }
+  footer .footer-links a + a::before { content: "·"; margin: 0 0.5rem 0 0.4rem; text-decoration: none; display: inline-block; }
 
   /* ---- Ventana de tiempo: slider de días en el header ---- */
   #time-control {
@@ -182,7 +249,10 @@
   .badge-none { background: rgba(74,201,127,0.15); color: var(--safe); }
   .muted { color: var(--muted); font-size: 0.85rem; }
   .result-card p { margin: 0.3rem 0; }
-  .disclaimer-line { color: var(--muted); font-size: 0.72rem; display: block; margin-top: 0.3rem; }
+  .tips { margin: 0.4rem 0; padding-left: 1.1rem; color: var(--muted); font-size: 0.85rem; }
+  .tips li { margin: 0.2rem 0; }
+  .sheet a { color: var(--muted); }
+  .disclaimer-line { color: var(--muted); font-size: 0.75rem; display: block; margin-top: 0.3rem; }
 
   /* ---- Mapa: el elemento dominante de la pantalla ---- */
   #map-wrap { flex: 1 1 auto; position: relative; min-height: 0; }
@@ -199,7 +269,7 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 0.4rem 0.6rem;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     color: var(--muted);
     z-index: 10;
     pointer-events: none;
@@ -214,10 +284,10 @@
     /* En movil los botones flotantes viven en la esquina inferior derecha --
        la leyenda se achica y se acota mas, Y los botones se acortan tambien,
        para dejar un margen real entre los dos y que no se encimen. */
-    .map-caption { max-width: min(44vw, 200px); font-size: 0.64rem; padding: 0.3rem 0.5rem; bottom: 0.6rem; left: 0.6rem; }
+    .map-caption { max-width: min(46vw, 210px); font-size: 0.75rem; padding: 0.3rem 0.5rem; bottom: 0.6rem; left: calc(0.6rem + env(safe-area-inset-left)); }
     .map-caption .legend-extra { display: none; }
-    #heat-toggle { font-size: 0.6rem; padding: 0.1rem 0.35rem; }
-    #map-actions { right: 0.6rem; bottom: 1rem; gap: 0.45rem; }
+    #heat-toggle { font-size: 0.75rem; padding: 0 0.6rem; }
+    #map-actions { right: calc(0.6rem + env(safe-area-inset-right)); bottom: calc(1rem + env(safe-area-inset-bottom)); gap: 0.45rem; }
     #map-actions button { padding: 0.7rem 1rem; font-size: 0.85rem; }
     .fab-extra { display: none; }
     .fab-short { display: inline; }
@@ -225,8 +295,10 @@
   #heat-toggle {
     pointer-events: auto;
     width: auto;
-    padding: 0.1rem 0.4rem;
-    font-size: 0.85rem;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 0.7rem;
+    font-size: 0.78rem;
     line-height: 1;
     background: transparent;
     border: 1px solid var(--border);
@@ -237,8 +309,8 @@
   /* ---- Tres acciones flotantes pares: buscar / zona / reportar ---- */
   #map-actions {
     position: absolute;
-    right: 1rem;
-    bottom: 1.25rem;
+    right: calc(1rem + env(safe-area-inset-right));
+    bottom: calc(1.25rem + env(safe-area-inset-bottom));
     z-index: 15;
     display: flex;
     flex-direction: column;
@@ -268,16 +340,24 @@
   #fab { box-shadow: 0 8px 24px rgba(227,74,74,0.45); }
 
   /* ---- Paneles bajo demanda (reportar / buscar número) ---- */
-  .sheet-overlay {
+  /* <dialog> con showModal(): Escape, foco atrapado y retorno de foco nativos. */
+  dialog.sheet-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.55);
-    display: none;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
     align-items: flex-end;
     justify-content: center;
-    z-index: 30;
   }
-  .sheet-overlay.open { display: flex; }
+  dialog.sheet-overlay[open] { display: flex; }
+  dialog.sheet-overlay::backdrop { background: rgba(0,0,0,0.55); }
   .sheet {
     width: 100%;
     max-width: 480px;
@@ -287,9 +367,10 @@
     padding: 1.25rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));
     max-height: 85vh;
     overflow-y: auto;
+    color: var(--text);
   }
   @media (min-width: 600px) {
-    .sheet-overlay { align-items: center; }
+    dialog.sheet-overlay[open] { align-items: center; }
     .sheet { border-radius: 16px; max-height: 90vh; }
   }
   .modal-header {
@@ -304,8 +385,10 @@
     background: transparent;
     border: none;
     color: var(--muted);
-    font-size: 1.4rem;
+    font-size: 1.6rem;
     line-height: 1;
+    min-width: 44px;
+    min-height: 44px;
     padding: 0.25rem 0.5rem;
     cursor: pointer;
   }
@@ -377,6 +460,10 @@
     0% { transform: scale(0.6); opacity: 0.8; }
     100% { transform: scale(2.2); opacity: 0; }
   }
+  @media (prefers-reduced-motion: reduce) {
+    .trend-pulse { animation: none; opacity: 0.35; transform: scale(1.4); }
+    #zone-toast, #category-chips { transition: none; }
+  }
 
   /* ---- Toast del resumen de zona ---- */
   #zone-toast {
@@ -424,8 +511,11 @@
     background: transparent;
     border: none;
     color: var(--muted);
-    font-size: 1.3rem;
+    font-size: 1.5rem;
     line-height: 1;
+    min-width: 44px;
+    min-height: 44px;
+    margin: -0.6rem -0.6rem -0.6rem 0;
     padding: 0 0.25rem;
     cursor: pointer;
   }
@@ -435,7 +525,7 @@
   #category-chips {
     position: absolute;
     top: 0.75rem;
-    left: 0.75rem;
+    left: calc(0.75rem + env(safe-area-inset-left));
     z-index: 10;
     max-width: 280px;
     display: flex;
@@ -447,17 +537,62 @@
   }
   #category-chips:empty { display: none; }
   .chip {
-    padding: 0.3rem 0.65rem;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 0.85rem;
     border-radius: 999px;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 500;
     background: rgba(26,29,36,0.92);
     border: 1px solid var(--border);
     color: var(--muted);
     cursor: pointer;
     white-space: nowrap;
   }
+  .chip:hover { background: rgba(35,39,48,0.95); }
+  .chip.active:hover { background: rgba(140,160,255,0.26); }
   .chip.active { background: rgba(140,160,255,0.18); color: #8ca0ff; border-color: #8ca0ff; }
-  .search-mode-row { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; }
+  .search-mode-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem; }
+  .search-mode-row .chip { width: auto; }
+
+  /* ---- Avisos del mapa: cargando / error / vacio ---- */
+  #map-notice, #map-empty {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 12;
+    max-width: min(86%, 340px);
+    text-align: center;
+    background: rgba(26,29,36,0.96);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+  #map-empty { pointer-events: none; color: var(--muted); top: 42%; }
+  #map-notice p { margin: 0 0 0.5rem; }
+  #map-notice p:last-child { margin: 0; }
+  #map-retry, #boot-retry { min-height: 44px; padding: 0 1.2rem; width: auto; }
+  #boot-error {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    padding: 1.5rem;
+    text-align: center;
+    background: var(--bg);
+  }
+  #boot-error[hidden] { display: none !important; }
+  #boot-error p { max-width: 360px; margin: 0; }
+  .legal-line { font-size: 0.75rem; color: var(--muted); margin: 0.5rem 0 0; }
+  .legal-line a { color: var(--muted); }
   #hospedaje-fields { margin-top: 0.5rem; }
   #hospedaje-fields .field-group { margin-top: 0.9rem; }
   #hospedaje-fields .field-group > label {
@@ -469,6 +604,7 @@
     padding: 0.85rem; cursor: pointer; color: var(--muted); font-size: 0.9rem;
     background: #12141a; transition: border-color 0.15s ease, color 0.15s ease;
   }
+  #hospedaje-fields .file-upload:focus-within { outline: 2px solid var(--accent); }
   #hospedaje-fields .file-upload:hover { border-color: var(--accent); color: var(--text); }
 </style>
 </head>
@@ -479,8 +615,12 @@
     <h1>Radar Urbano</h1>
     <div id="time-control">
       <input type="range" id="time-filter" min="7" max="90" step="1" value="30" aria-label="Ventana de días a mostrar">
-      <span id="time-filter-label" title="Ventana de días · reportes visibles en el mapa">30 días</span>
+      <span id="time-filter-label" title="Ventana de días · reportes visibles en el mapa" aria-hidden="true">30 días</span>
     </div>
+    <button id="share-btn" type="button" aria-label="Compartir Radar Urbano">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
+      <span class="share-text">Compartir</span>
+    </button>
   </header>
 
   <div id="map-wrap">
@@ -488,21 +628,27 @@
 
     <div id="zone-toast" role="status" aria-live="polite">
       <div id="zone-toast-text"></div>
-      <button id="zone-toast-close" type="button" aria-label="Cerrar">&times;</button>
+      <button id="zone-toast-close" type="button" aria-label="Cerrar aviso">&times;</button>
     </div>
 
-    <div id="category-chips"></div>
+    <div id="category-chips" role="group" aria-label="Filtrar por categoría"></div>
+
+    <div id="map-notice" role="status" aria-live="polite">
+      <p id="map-notice-text">Cargando mapa...</p>
+      <button id="map-retry" type="button" hidden>Reintentar</button>
+    </div>
+    <div id="map-empty" role="status" hidden>Sin reportes en esta ventana</div>
 
     <div class="map-caption">
       <span class="legend-item"><span class="legend-dot legend-dot-context"></span>histórico</span>
       <span class="legend-item"><span class="legend-dot legend-dot-phone"></span>fraude</span>
       <span class="legend-item"><span class="legend-dot legend-dot-incident"></span>incidentes</span>
       <span class="legend-item">⚠️<span class="legend-extra"> tendencia</span></span>
-      <button id="heat-toggle" type="button" title="Ver como mapa de calor">🔥</button>
+      <button id="heat-toggle" type="button" title="Ver como mapa de calor" aria-label="Mapa de calor" aria-pressed="false">Calor</button>
     </div>
 
     <div id="map-actions">
-      <button id="fab">
+      <button id="fab" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Reportar
       </button>
@@ -520,53 +666,74 @@
   <footer>
     Contenido generado por usuarios, sin verificar ·
     <a href="mailto:contacto@radarurbano.org">¿Un reporte te menciona injustamente? Escríbenos</a>
+    <div class="footer-links">
+      <a href="/privacidad.html">Privacidad</a><a href="/terminos.html">Términos</a><a href="/arco.html">Derechos ARCO</a>
+    </div>
   </footer>
-</div>
 
-<div id="search-overlay" class="sheet-overlay">
-  <div class="sheet">
-    <div class="modal-header">
-      <h2 id="search-title">Buscar un número</h2>
-      <button id="search-close" class="sheet-close" aria-label="Cerrar">&times;</button>
-    </div>
-    <div class="search-mode-row">
-      <button id="search-mode-phone" class="chip active" type="button">Por teléfono</button>
-      <button id="search-mode-name" class="chip" type="button">Por nombre (hospedaje)</button>
-    </div>
-    <p class="muted sheet-intro" id="search-intro">Consulta si un número ya fue reportado por fraude telefónico.</p>
-    <div class="search-row">
-      <input type="tel" id="search-input" placeholder="Ej. 55 1234 5678" autocomplete="tel" inputmode="tel">
-      <button id="search-btn">Buscar</button>
-    </div>
-    <div id="search-results"></div>
+  <div id="boot-error" role="alert" hidden>
+    <p><strong>No pudimos cargar el mapa.</strong></p>
+    <p class="muted">Revisa tu conexión e intenta de nuevo. Si el problema sigue, escríbenos a contacto@radarurbano.org.</p>
+    <button id="boot-retry" type="button">Reintentar</button>
   </div>
 </div>
 
-<div id="report-overlay" class="sheet-overlay">
+<dialog id="search-overlay" class="sheet-overlay" aria-labelledby="search-title">
+  <div class="sheet">
+    <div class="modal-header">
+      <h2 id="search-title">Buscar un número</h2>
+      <button id="search-close" class="sheet-close" type="button" aria-label="Cerrar búsqueda">&times;</button>
+    </div>
+    <div class="search-mode-row">
+      <button id="search-mode-phone" class="chip active" type="button" aria-pressed="true">Por teléfono</button>
+      <button id="search-mode-name" class="chip" type="button" aria-pressed="false">Por nombre (hospedaje)</button>
+    </div>
+    <p class="muted sheet-intro" id="search-intro">Consulta si un número ya fue reportado por fraude telefónico.</p>
+    <div class="search-row">
+      <input type="tel" id="search-input" placeholder="Ej. 55 1234 5678" autocomplete="tel" inputmode="tel" aria-label="Número de teléfono a buscar">
+      <button id="search-btn" type="button">Buscar</button>
+    </div>
+    <div id="search-results" role="status" aria-live="polite"></div>
+    <p class="legal-line"><a href="/privacidad.html" target="_blank" rel="noopener">Aviso de privacidad</a> · <a href="/terminos.html" target="_blank" rel="noopener">Términos</a></p>
+  </div>
+</dialog>
+
+<dialog id="report-overlay" class="sheet-overlay" aria-labelledby="report-title">
   <div id="report-modal" class="sheet">
     <div class="modal-header">
-      <h2>Reportar</h2>
-      <button id="report-close" class="sheet-close" aria-label="Cerrar">&times;</button>
+      <h2 id="report-title">Reportar</h2>
+      <button id="report-close" class="sheet-close" type="button" aria-label="Cerrar formulario de reporte">&times;</button>
     </div>
 
+    <div id="report-thanks" hidden>
+      <h3 id="report-thanks-title" tabindex="-1">Gracias</h3>
+      <p id="report-thanks-text" class="muted" role="status"></p>
+      <button id="report-thanks-close" type="button" style="width:100%; margin-top:0.5rem;">Cerrar</button>
+    </div>
+
+    <div id="report-form">
+
     <div class="search-mode-row">
-      <button id="report-mode-incident" class="chip active" type="button">Incidente</button>
-      <button id="report-mode-hospedaje" class="chip" type="button">Hospedaje / Airbnb</button>
+      <button id="report-mode-incident" class="chip active" type="button" aria-pressed="true">Incidente</button>
+      <button id="report-mode-hospedaje" class="chip" type="button" aria-pressed="false">Hospedaje / Airbnb</button>
     </div>
 
     <p class="muted sheet-intro" id="report-intro">Fraude telefónico, robo, asalto, lo que haya sido — no hace falta elegir categoría, nosotros la detectamos.</p>
 
+    <label for="report-description" class="sr-only">Descripción de lo que pasó</label>
     <textarea id="report-description" placeholder="¿Qué pasó?" required></textarea>
 
     <div id="incident-fields">
+      <label for="report-phone" class="sr-only">Número de teléfono (si aplica)</label>
       <input type="tel" id="report-phone" placeholder="Número de teléfono (si aplica)" autocomplete="tel" inputmode="tel" style="margin-top:0.5rem">
       <div id="location-row">
         <button id="use-location-btn" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 21s-7-6.5-7-11.5A7 7 0 0 1 19 9.5C19 14.5 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
           Usar mi ubicación
         </button>
-        <span id="location-status" class="muted"></span>
+        <span id="location-status" class="muted" role="status" aria-live="polite"></span>
       </div>
+      <label for="report-location-text" class="sr-only">Zona o colonia (opcional)</label>
       <input type="text" id="report-location-text" placeholder="O escribe la zona/colonia (opcional)">
     </div>
 
@@ -585,742 +752,23 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M21.44 11.05l-9.19 9.19a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.19a1.5 1.5 0 0 1-2.12-2.12l8.49-8.48"/></svg>
           <span id="hospedaje-image-label">Adjuntar captura de conversación</span>
         </label>
-        <input type="file" id="hospedaje-image" accept="image/png,image/jpeg,image/webp" hidden>
+        <input type="file" id="hospedaje-image" accept="image/png,image/jpeg,image/webp" class="sr-only">
       </div>
     </div>
 
     <p class="disclaimer-line" id="report-disclaimer" style="margin-top:0.6rem;">Tu reporte se publica sin verificar. No lo uses para dañar a alguien a propósito — un reporte falso puede ser responsabilidad tuya, no de Radar Urbano.</p>
     <p class="disclaimer-line" id="hospedaje-contact-line" hidden>¿Un reporte te menciona injustamente? <a href="mailto:contacto@radarurbano.org?subject=Soy%20la%20persona%20nombrada%20en%20un%20reporte">Escríbenos aquí</a> — respondemos en máximo 72 horas.</p>
 
-    <button id="report-submit-btn" style="width:100%; margin-top:0.5rem;">Reportar</button>
-    <div id="report-status" class="status-msg"></div>
+    <p class="legal-line"><strong>No incluyas datos de terceros</strong> (caras, direcciones, teléfonos) en el texto ni en las capturas.</p>
+    <p class="legal-line">Al enviar aceptas los <a href="/terminos.html" target="_blank" rel="noopener">Términos</a> y el <a href="/privacidad.html" target="_blank" rel="noopener">Aviso de privacidad</a>. Si apareces en un reporte, conoce tus <a href="/arco.html" target="_blank" rel="noopener">derechos ARCO</a>.</p>
+
+    <button id="report-submit-btn" type="button" style="width:100%; margin-top:0.6rem;">Reportar</button>
+    <div id="report-status" class="status-msg" role="status" aria-live="polite"></div>
+    </div>
   </div>
-</div>
+</dialog>
 
-<script type="module">
-  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-  import 'https://esm.sh/leaflet@1.9.4';
-  import 'https://esm.sh/leaflet.heat@0.2.0?deps=leaflet@1.9.4';
-
-  const SUPABASE_URL = 'https://ifcgwnbaiozuvjorkcoc.supabase.co';
-  const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_Z2tMpWR9mWfzttfralmWag_Aq7xSGkB';
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-
-  const normalizePhone = (raw) => raw.replace(/\D/g, '');
-
-  // --- Search (panel bajo demanda) ---
-  const searchInput = document.getElementById('search-input');
-  const searchBtn = document.getElementById('search-btn');
-  const searchResults = document.getElementById('search-results');
-  const searchOpenBtn = document.getElementById('search-open-btn');
-  const searchOverlay = document.getElementById('search-overlay');
-  const searchCloseBtn = document.getElementById('search-close');
-  const searchTitle = document.getElementById('search-title');
-  const searchIntro = document.getElementById('search-intro');
-  const searchModePhoneBtn = document.getElementById('search-mode-phone');
-  const searchModeNameBtn = document.getElementById('search-mode-name');
-
-  let searchMode = 'phone'; // 'phone' | 'name'
-
-  function setSearchMode(mode) {
-    searchMode = mode;
-    searchResults.innerHTML = '';
-    searchInput.value = '';
-    if (mode === 'phone') {
-      searchModePhoneBtn.classList.add('active');
-      searchModeNameBtn.classList.remove('active');
-      searchTitle.textContent = 'Buscar un número';
-      searchIntro.textContent = 'Consulta si un número ya fue reportado por fraude telefónico.';
-      searchInput.type = 'tel';
-      searchInput.placeholder = 'Ej. 55 1234 5678';
-    } else {
-      searchModePhoneBtn.classList.remove('active');
-      searchModeNameBtn.classList.add('active');
-      searchTitle.textContent = 'Buscar por nombre (hospedaje)';
-      searchIntro.textContent = 'Consulta si alguien ya fue reportado por mal comportamiento en hospedaje/Airbnb. Solo se muestran reportes ya revisados y publicados.';
-      searchInput.type = 'text';
-      searchInput.placeholder = 'Nombre de la persona';
-    }
-  }
-
-  function openSearch() {
-    searchOverlay.classList.add('open');
-    setTimeout(() => searchInput.focus(), 50);
-  }
-  function closeSearch() { searchOverlay.classList.remove('open'); }
-
-  searchOpenBtn.addEventListener('click', () => { setSearchMode('phone'); openSearch(); });
-  searchCloseBtn.addEventListener('click', closeSearch);
-  searchOverlay.addEventListener('click', (e) => { if (e.target === searchOverlay) closeSearch(); });
-  searchModePhoneBtn.addEventListener('click', () => setSearchMode('phone'));
-  searchModeNameBtn.addEventListener('click', () => setSearchMode('name'));
-
-  async function searchNumber() {
-    const phone = normalizePhone(searchInput.value);
-    if (phone.length < 8) {
-      searchResults.innerHTML = '<div class="result-card status-msg status-err">Escribe un número válido.</div>';
-      return;
-    }
-    searchBtn.disabled = true;
-    searchResults.innerHTML = '<div class="result-card muted">Buscando...</div>';
-
-    const { data, error } = await supabase
-      .from('phone_confidence')
-      .select('*')
-      .eq('phone_number', phone)
-      .maybeSingle();
-
-    searchBtn.disabled = false;
-
-    if (error) {
-      searchResults.innerHTML = '<div class="result-card status-msg status-err">Error al buscar. Intenta de nuevo.</div>';
-      return;
-    }
-
-    if (!data || data.report_count === 0) {
-      searchResults.innerHTML = `
-        <div class="result-card">
-          <span class="badge badge-none">Sin reportes</span>
-          <p class="muted">Nadie ha reportado este número todavía. Si te pasó algo, repórtalo con el botón del mapa.</p>
-        </div>`;
-      return;
-    }
-
-    const isHighConfidence = data.report_count >= 3;
-    searchResults.innerHTML = `
-      <div class="result-card">
-        <span class="badge ${isHighConfidence ? 'badge-high' : 'badge-low'}">
-          ${isHighConfidence ? `${data.report_count} personas reportaron este número` : 'Reportado por pocas personas'}
-        </span>
-        <p>${data.report_count} reporte${data.report_count === 1 ? '' : 's'} único${data.report_count === 1 ? '' : 's'}, sin verificar</p>
-        <p class="muted">Último reporte: ${new Date(data.last_reported_at).toLocaleDateString('es-MX')}</p>
-        <p class="disclaimer-line">Reportes de usuarios, no verificados por Radar Urbano. No implica que el titular de este número haya cometido un delito.</p>
-      </div>`;
-  }
-
-  async function searchName() {
-    const nameNormalized = searchInput.value.trim().toLowerCase();
-    if (nameNormalized.length < 2) {
-      searchResults.innerHTML = '<div class="result-card status-msg status-err">Escribe un nombre válido.</div>';
-      return;
-    }
-    searchBtn.disabled = true;
-    searchResults.innerHTML = '<div class="result-card muted">Buscando...</div>';
-
-    const { data, error } = await supabase
-      .from('named_report_confidence')
-      .select('*')
-      .eq('value_normalized', nameNormalized)
-      .maybeSingle();
-
-    searchBtn.disabled = false;
-
-    if (error) {
-      searchResults.innerHTML = '<div class="result-card status-msg status-err">Error al buscar. Intenta de nuevo.</div>';
-      return;
-    }
-
-    if (!data || data.report_count === 0) {
-      searchResults.innerHTML = `
-        <div class="result-card">
-          <span class="badge badge-none">Sin reportes publicados</span>
-          <p class="muted">Nadie con ese nombre tiene reportes ya revisados y publicados. Si te pasó algo, repórtalo con el botón "Hospedaje / Airbnb".</p>
-        </div>`;
-      return;
-    }
-
-    searchResults.innerHTML = `
-      <div class="result-card">
-        <span class="badge ${data.report_count >= 2 ? 'badge-high' : 'badge-low'}">
-          ${data.report_count} reporte${data.report_count === 1 ? '' : 's'} publicado${data.report_count === 1 ? '' : 's'}
-        </span>
-        <p class="muted">Último reporte: ${new Date(data.last_reported_at).toLocaleDateString('es-MX')}</p>
-        <p class="disclaimer-line">Reportes de usuarios, revisados por un moderador antes de publicarse. No implica que la persona haya cometido un delito ni es un registro oficial.</p>
-      </div>`;
-  }
-
-  searchBtn.addEventListener('click', () => (searchMode === 'phone' ? searchNumber() : searchName()));
-  searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') (searchMode === 'phone' ? searchNumber() : searchName());
-  });
-
-  // --- Report modal ---
-  const fab = document.getElementById('fab');
-  const overlay = document.getElementById('report-overlay');
-  const closeBtn = document.getElementById('report-close');
-  const reportPhone = document.getElementById('report-phone');
-  const reportDescription = document.getElementById('report-description');
-  const reportLocationText = document.getElementById('report-location-text');
-  const useLocationBtn = document.getElementById('use-location-btn');
-  const locationStatus = document.getElementById('location-status');
-  const reportSubmitBtn = document.getElementById('report-submit-btn');
-  const reportStatus = document.getElementById('report-status');
-  const reportIntro = document.getElementById('report-intro');
-  const reportDisclaimer = document.getElementById('report-disclaimer');
-  const hospedajeContactLine = document.getElementById('hospedaje-contact-line');
-  const incidentFields = document.getElementById('incident-fields');
-  const hospedajeFields = document.getElementById('hospedaje-fields');
-  const reportModeIncidentBtn = document.getElementById('report-mode-incident');
-  const reportModeHospedajeBtn = document.getElementById('report-mode-hospedaje');
-  const hospedajeName = document.getElementById('hospedaje-name');
-  const hospedajeLink = document.getElementById('hospedaje-link');
-  const hospedajeImage = document.getElementById('hospedaje-image');
-  const hospedajeImageLabel = document.getElementById('hospedaje-image-label');
-  const HOSPEDAJE_IMAGE_LABEL_DEFAULT = hospedajeImageLabel.textContent;
-
-  const INCIDENT_DISCLAIMER = 'Tu reporte se publica sin verificar. No lo uses para dañar a alguien a propósito — un reporte falso puede ser responsabilidad tuya, no de Radar Urbano.';
-  const HOSPEDAJE_DISCLAIMER = 'Reporte pendiente de revisión — no es una acusación confirmada ni un registro oficial. Un reporte falso es tu responsabilidad, no de Radar Urbano. La imagen se guarda en privado; si se publica, solo se muestra un recorte revisado.';
-
-  let reportMode = 'incident'; // 'incident' | 'hospedaje'
-  let capturedLat = null;
-  let capturedLon = null;
-
-  function setReportMode(mode) {
-    reportMode = mode;
-    reportStatus.textContent = '';
-    reportStatus.className = 'status-msg';
-    if (mode === 'incident') {
-      reportModeIncidentBtn.classList.add('active');
-      reportModeHospedajeBtn.classList.remove('active');
-      incidentFields.hidden = false;
-      hospedajeFields.hidden = true;
-      hospedajeContactLine.hidden = true;
-      reportIntro.textContent = 'Fraude telefónico, robo, asalto, lo que haya sido — no hace falta elegir categoría, nosotros la detectamos.';
-      reportDisclaimer.textContent = INCIDENT_DISCLAIMER;
-      reportSubmitBtn.textContent = 'Reportar';
-    } else {
-      reportModeIncidentBtn.classList.remove('active');
-      reportModeHospedajeBtn.classList.add('active');
-      incidentFields.hidden = true;
-      hospedajeFields.hidden = false;
-      hospedajeContactLine.hidden = false;
-      reportIntro.textContent = 'Cuéntanos qué pasó. Un moderador revisa cada reporte antes de que se publique — no aparece solo.';
-      reportDisclaimer.textContent = HOSPEDAJE_DISCLAIMER;
-      reportSubmitBtn.textContent = 'Enviar a revisión';
-    }
-  }
-
-  reportModeIncidentBtn.addEventListener('click', () => setReportMode('incident'));
-  reportModeHospedajeBtn.addEventListener('click', () => setReportMode('hospedaje'));
-
-  hospedajeImage.addEventListener('change', () => {
-    hospedajeImageLabel.textContent = hospedajeImage.files[0]?.name || HOSPEDAJE_IMAGE_LABEL_DEFAULT;
-  });
-
-  function openModal() {
-    setReportMode('incident');
-    overlay.classList.add('open');
-    setTimeout(() => reportDescription.focus(), 50);
-  }
-  function closeModal() { overlay.classList.remove('open'); }
-
-  fab.addEventListener('click', openModal);
-  closeBtn.addEventListener('click', closeModal);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
-
-  useLocationBtn.addEventListener('click', () => {
-    if (!navigator.geolocation) {
-      locationStatus.textContent = 'Tu navegador no soporta ubicación.';
-      return;
-    }
-    locationStatus.textContent = 'Obteniendo ubicación...';
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        capturedLat = pos.coords.latitude;
-        capturedLon = pos.coords.longitude;
-        locationStatus.textContent = '✓ Ubicación capturada';
-      },
-      () => {
-        locationStatus.textContent = 'No se pudo obtener — escribe la zona abajo.';
-      },
-      { timeout: 8000 }
-    );
-  });
-
-  async function submitReport() {
-    const phone = normalizePhone(reportPhone.value);
-    const description = reportDescription.value.trim();
-    const locationText = reportLocationText.value.trim();
-    const phoneTyped = reportPhone.value.trim().length > 0;
-
-    if (description.length < 5) {
-      reportStatus.textContent = 'Describe qué pasó.';
-      reportStatus.className = 'status-msg status-err';
-      return;
-    }
-    if (phoneTyped && phone.length < 8) {
-      reportStatus.textContent = 'El número parece incompleto.';
-      reportStatus.className = 'status-msg status-err';
-      return;
-    }
-    if (phone.length < 8 && capturedLat === null && !locationText) {
-      reportStatus.textContent = 'Agrega un número, tu ubicación, o la zona donde pasó.';
-      reportStatus.className = 'status-msg status-err';
-      return;
-    }
-
-    reportSubmitBtn.disabled = true;
-    reportStatus.textContent = 'Enviando...';
-    reportStatus.className = 'status-msg';
-
-    const payload = { description };
-    if (phone.length >= 8) payload.phone_number = phone;
-    if (capturedLat !== null) { payload.lat = capturedLat; payload.lon = capturedLon; }
-    if (locationText) payload.location_text = locationText;
-
-    const { error } = await supabase.from('reports').insert(payload);
-
-    reportSubmitBtn.disabled = false;
-
-    if (error) {
-      reportStatus.textContent = error.code === 'rate_limited'
-        ? error.message
-        : 'No se pudo enviar el reporte. Intenta de nuevo.';
-      reportStatus.className = 'status-msg status-err';
-      return;
-    }
-
-    reportStatus.textContent = 'Reporte enviado. Gracias por ayudar a otros.';
-    reportStatus.className = 'status-msg status-ok';
-    reportPhone.value = '';
-    reportDescription.value = '';
-    reportLocationText.value = '';
-    locationStatus.textContent = '';
-    capturedLat = null;
-    capturedLon = null;
-    setTimeout(closeModal, 1200);
-  }
-
-  // Reportes con nombre (hospedaje/Airbnb) nunca se auto-publican -- ver
-  // submit_named_report() en la base de datos, que fuerza status='pending' sin
-  // importar lo que mande este cliente.
-  const HOSPEDAJE_RPC_ERRORS = {
-    description_too_short: 'Describe qué pasó con un poco más de detalle.',
-    subject_value_required: 'Escribe el nombre de la persona.',
-    rate_limited_subject: 'Ya hay varios reportes recientes con ese nombre. Espera antes de mandar otro.',
-  };
-
-  async function submitHospedajeReport() {
-    const name = hospedajeName.value.trim();
-    const link = hospedajeLink.value.trim();
-    const description = reportDescription.value.trim();
-    const file = hospedajeImage.files[0];
-
-    if (name.length < 2) {
-      reportStatus.textContent = 'Escribe el nombre de la persona.';
-      reportStatus.className = 'status-msg status-err';
-      return;
-    }
-    if (description.length < 5) {
-      reportStatus.textContent = 'Describe qué pasó.';
-      reportStatus.className = 'status-msg status-err';
-      return;
-    }
-    if (file && file.size > 8 * 1024 * 1024) {
-      reportStatus.textContent = 'La imagen pesa demasiado (máximo 8MB).';
-      reportStatus.className = 'status-msg status-err';
-      return;
-    }
-
-    reportSubmitBtn.disabled = true;
-    reportStatus.textContent = 'Enviando...';
-    reportStatus.className = 'status-msg';
-
-    let evidenceStoragePath = null;
-    if (file) {
-      const path = `pending/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-      const { error: uploadError } = await supabase.storage.from('evidence-private').upload(path, file);
-      if (uploadError) {
-        reportSubmitBtn.disabled = false;
-        reportStatus.textContent = 'No se pudo subir la imagen. Intenta de nuevo o envía el reporte sin ella.';
-        reportStatus.className = 'status-msg status-err';
-        return;
-      }
-      evidenceStoragePath = path;
-    }
-
-    const { error } = await supabase.rpc('submit_named_report', {
-      p_description: description,
-      p_category: 'hospedaje',
-      p_subject_type: 'person_name',
-      p_subject_value: name,
-      p_reference_url: link || null,
-      p_evidence_storage_path: evidenceStoragePath,
-    });
-
-    reportSubmitBtn.disabled = false;
-
-    if (error) {
-      const key = Object.keys(HOSPEDAJE_RPC_ERRORS).find((k) => error.message?.includes(k));
-      reportStatus.textContent = key ? HOSPEDAJE_RPC_ERRORS[key] : 'No se pudo enviar el reporte. Intenta de nuevo.';
-      reportStatus.className = 'status-msg status-err';
-      return;
-    }
-
-    reportStatus.textContent = 'Reporte enviado a revisión. Un moderador lo revisa antes de publicarlo.';
-    reportStatus.className = 'status-msg status-ok';
-    hospedajeName.value = '';
-    hospedajeLink.value = '';
-    reportDescription.value = '';
-    hospedajeImage.value = '';
-    hospedajeImageLabel.textContent = HOSPEDAJE_IMAGE_LABEL_DEFAULT;
-    setTimeout(closeModal, 1600);
-  }
-
-  reportSubmitBtn.addEventListener('click', () => {
-    if (reportMode === 'incident') submitReport();
-    else submitHospedajeReport();
-  });
-
-  // --- Map (elemento dominante de la pantalla) ---
-  async function loadMap() {
-    const map = L.map('map', { zoomControl: false }).setView([23.6345, -102.5528], 5);
-    window.__radarMap = map;
-    incidentLayer.addTo(map);
-    L.control.zoom({ position: 'bottomleft' }).addTo(map);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
-      maxZoom: 12,
-    }).addTo(map);
-
-    // El contenedor vive en un layout flex (100dvh); en algunos navegadores móviles
-    // el tamaño final se asienta después del primer paint. Forzamos un recálculo.
-    setTimeout(() => map.invalidateSize(), 100);
-    window.addEventListener('resize', () => map.invalidateSize());
-
-    // Capa 0: contexto de incidencia delictiva oficial (SESNSP) -- fondo ambar muy tenue,
-    // por municipio. Es contexto historico (no reportes en vivo), y solo se muestra al
-    // hacer zoom a una ciudad -- a nivel pais 400 circulos encimados se ven como una
-    // mancha naranja que tapa todo, en vez de contexto sutil.
-    const { data: sesnspData, error: sesnspError } = await supabase
-      .from('sesnsp_municipal_crime')
-      .select('total_delitos, total_robos, municipio_coordinates(municipio, estado, lat, lon)')
-      .order('total_delitos', { ascending: false });
-
-    if (!sesnspError && sesnspData) {
-      allSesnsp = sesnspData.filter((row) => row.municipio_coordinates);
-      allSesnsp.forEach((row) => {
-        const muni = row.municipio_coordinates;
-        const radius = Math.min(4 + Math.sqrt(row.total_delitos) * 0.35, 22);
-        L.circleMarker([muni.lat, muni.lon], {
-          radius,
-          color: '#e3b34a',
-          weight: 1.5,
-          dashArray: '3,4', // punteado: se lee como "historico", distinto a los solidos (vivo)
-          fillColor: '#e3b34a',
-          fillOpacity: 0.18,
-        })
-          .addTo(contextLayer)
-          .bindPopup(`<strong>${muni.municipio}, ${muni.estado}</strong><br><span class="muted">Contexto SESNSP (histórico)</span><br>${row.total_delitos.toLocaleString('es-MX')} delitos/año · ${row.total_robos.toLocaleString('es-MX')} robos`);
-      });
-    }
-
-    const CONTEXT_MIN_ZOOM = 5;
-    function syncContextLayerVisibility() {
-      const hasLayer = map.hasLayer(contextLayer);
-      if (map.getZoom() >= CONTEXT_MIN_ZOOM && !hasLayer) contextLayer.addTo(map);
-      else if (map.getZoom() < CONTEXT_MIN_ZOOM && hasLayer) map.removeLayer(contextLayer);
-    }
-    map.on('zoomend', syncContextLayerVisibility);
-    syncContextLayerVisibility();
-
-    // Capa 1: fraude telefónico agregado por región (LADA) -- círculos rojos.
-    const { data: ladaData, error: ladaError } = await supabase
-      .from('fraud_counts_by_lada')
-      .select('*')
-      .gt('total_reports', 0);
-
-    if (!ladaError && ladaData) {
-      ladaData.forEach((row) => {
-        const radius = Math.min(10 + row.total_reports * 3, 48);
-        L.circleMarker([row.lat, row.lon], {
-          radius,
-          color: '#e34a4a',
-          weight: 2,
-          fillColor: '#e34a4a',
-          fillOpacity: 0.35,
-        })
-          .addTo(map)
-          .bindPopup(`<strong>${row.region}</strong><br>${row.total_reports} reporte${row.total_reports === 1 ? '' : 's'} de fraude telefónico`);
-      });
-    }
-
-    // Capa 2: incidentes con ubicación GPS (robo, asalto, etc.) -- puntos individuales azules.
-    // Coordenadas ya vienen difuminadas a ~1km desde el servidor, nunca la ubicación exacta.
-    // Se trae una ventana de 90 días; el filtro de tiempo/categoría es client-side sobre este set.
-    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
-    const { data: incidentData, error: incidentError } = await supabase
-      .from('reports')
-      .select('id, lat, lon, category, entities, created_at, duplicate_of')
-      .not('lat', 'is', null)
-      .gte('created_at', ninetyDaysAgo)
-      .order('created_at', { ascending: false });
-
-    if (!incidentError && incidentData) {
-      allIncidents = incidentData;
-      buildCategoryChips();
-      renderIncidents();
-    }
-
-    // Capa 3: tendencias emergentes -- puntos con 3+ reportes no duplicados en los
-    // ultimos 7 dias (ver vista trending_clusters). Proactivo: no hace falta
-    // preguntar, si hay algo se avisa solo al cargar el mapa.
-    const { data: trendData, error: trendError } = await supabase
-      .from('trending_clusters')
-      .select('*');
-
-    if (!trendError && trendData && trendData.length > 0) {
-      trendData.forEach((row) => {
-        const cats = (row.categories || []).map((c) => c.replace(/_/g, ' ')).join(', ') || 'sin clasificar';
-        const icon = L.divIcon({
-          className: 'trend-marker',
-          html: '<div class="trend-pulse"></div><div class="trend-dot">⚠️</div>',
-          iconSize: [28, 28],
-          iconAnchor: [14, 14],
-        });
-        L.marker([row.lat, row.lon], { icon })
-          .addTo(map)
-          .bindPopup(`<strong>⚠️ Más reportes de lo usual</strong><br>${row.report_count} reportes de usuarios en los últimos 7 días, sin verificar<br><span class="muted">${cats}</span>`);
-      });
-
-      const zones = trendData.length;
-      const total = trendData.reduce((s, r) => s + r.report_count, 0);
-      showToast(
-        '⚠️ Más reportes de lo usual',
-        `${zones} zona${zones === 1 ? '' : 's'} con más reportes de usuarios de lo normal esta semana (${total} en total, sin verificar). Búscalas en el mapa (⚠️).`,
-        'tone-alert'
-      );
-    }
-  }
-
-  // --- Capa de incidentes filtrable (tiempo + categoría) ---
-  let allIncidents = [];
-  let allSesnsp = [];
-  const activeCategories = new Set();
-  const incidentLayer = L.layerGroup();
-  const contextLayer = L.layerGroup();
-  const timeFilter = document.getElementById('time-filter');
-  const categoryChipsEl = document.getElementById('category-chips');
-
-  function buildCategoryChips() {
-    const categories = [...new Set(allIncidents.map((r) => r.category || 'sin_clasificar'))];
-    categories.forEach((c) => activeCategories.add(c));
-    categoryChipsEl.innerHTML = categories
-      .map((c) => `<span class="chip active" data-category="${c}">${c.replace(/_/g, ' ')}</span>`)
-      .join('');
-    categoryChipsEl.querySelectorAll('.chip').forEach((chip) => {
-      chip.addEventListener('click', () => {
-        const cat = chip.dataset.category;
-        if (activeCategories.has(cat)) {
-          activeCategories.delete(cat);
-          chip.classList.remove('active');
-        } else {
-          activeCategories.add(cat);
-          chip.classList.add('active');
-        }
-        renderIncidents();
-      });
-    });
-  }
-
-  // Recencia visual: mas reciente = mas opaco/grande. 90 dias (la ventana que se trae)
-  // se mapea a la opacidad minima; hoy mismo, a la maxima. Refuerza que esto es un
-  // radar en vivo, no un archivo historico.
-  function recencyStyle(createdAt) {
-    const ageDays = (Date.now() - new Date(createdAt).getTime()) / (24 * 60 * 60 * 1000);
-    const t = Math.min(ageDays / 90, 1); // 0 = hoy, 1 = 90 dias
-    return {
-      fillOpacity: 0.6 - t * 0.42, // 0.60 -> 0.18
-      radius: 9 - t * 3, // 9 -> 6
-    };
-  }
-
-  let viewMode = 'points'; // 'points' | 'heat'
-  let heatLayer = null;
-
-  function renderIncidents() {
-    incidentLayer.clearLayers();
-    if (heatLayer) { window.__radarMap.removeLayer(heatLayer); heatLayer = null; }
-
-    const days = Number(timeFilter.value);
-    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
-
-    // Cuantos reportes confirman cada evento canonico (duplicate_of === null).
-    const confirmations = new Map();
-    allIncidents.forEach((row) => {
-      if (row.duplicate_of) confirmations.set(row.duplicate_of, (confirmations.get(row.duplicate_of) || 0) + 1);
-    });
-
-    const visible = allIncidents
-      .filter((row) => !row.duplicate_of) // los duplicados no se dibujan aparte, ya cuentan arriba
-      .filter((row) => new Date(row.created_at).getTime() >= cutoff)
-      .filter((row) => activeCategories.has(row.category || 'sin_clasificar'));
-
-    // Con pocos reportes, mover el slider entre 7 y 90 días a veces no cambia
-    // ningún punto visible en el mapa -- sin este contador se ve como que el
-    // filtro no responde, aunque sí esté funcionando.
-    timeFilterLabel.textContent = `${days}d · ${visible.length}`;
-
-    if (viewMode === 'heat') {
-      const livePoints = visible.map((row) => {
-        const ageDays = (Date.now() - new Date(row.created_at).getTime()) / (24 * 60 * 60 * 1000);
-        const recencyWeight = Math.max(0.3, 1 - ageDays / 90);
-        const confirmWeight = 1 + (confirmations.get(row.id) || 0) * 0.5;
-        return [row.lat, row.lon, recencyWeight * confirmWeight];
-      });
-      // Contexto SESNSP tambien alimenta el calor, con peso menor que lo vivo -- es
-      // fondo historico, no debe opacar zonas con reportes reales y recientes.
-      const contextPoints = allSesnsp.map((row) => {
-        const muni = row.municipio_coordinates;
-        const weight = Math.min(row.total_delitos / 3000, 1) * 0.7;
-        return [muni.lat, muni.lon, weight];
-      });
-      const points = [...contextPoints, ...livePoints];
-      heatLayer = L.heatLayer(points, {
-        radius: 34,
-        blur: 24,
-        maxZoom: 12,
-        max: 0.6, // umbral bajo para llegar al rojo sin necesitar pesos extremos -- mas visible
-        minOpacity: 0.35, // que incluso zonas con poco peso se vean, no solo las mas intensas
-        gradient: { 0.15: '#2a2e8c', 0.4: '#8ca0ff', 0.7: '#e3b34a', 1: '#e34a4a' },
-      });
-      heatLayer.addTo(window.__radarMap);
-      return;
-    }
-
-    visible.forEach((row) => {
-      const label = (row.category || 'incidente').replace(/_/g, ' ');
-      const entityBits = [];
-      if (row.entities?.time_of_day) entityBits.push(row.entities.time_of_day);
-      if (row.entities?.weapon) entityBits.push(row.entities.weapon);
-      if (row.entities?.vehicle) entityBits.push(row.entities.vehicle);
-      const entityLine = entityBits.length ? `<br><span class="muted">${entityBits.join(' · ')}</span>` : '';
-      const confirmCount = confirmations.get(row.id) || 0;
-      const confirmLine = confirmCount > 0
-        ? `<br><span class="muted">Reportado por ${confirmCount + 1} persona${confirmCount + 1 === 1 ? '' : 's'}</span>`
-        : '';
-      const { fillOpacity, radius } = recencyStyle(row.created_at);
-
-      L.circleMarker([row.lat, row.lon], {
-        radius: confirmCount > 0 ? radius + 3 : radius,
-        color: '#8ca0ff',
-        weight: 2,
-        fillColor: '#8ca0ff',
-        fillOpacity,
-      })
-        .addTo(incidentLayer)
-        .bindPopup(`<strong>${label}</strong><br>${new Date(row.created_at).toLocaleDateString('es-MX')}${entityLine}${confirmLine}<br><span class="disclaimer-line">Reporte de usuario, sin verificar</span>`);
-    });
-  }
-
-  const heatToggle = document.getElementById('heat-toggle');
-  heatToggle.addEventListener('click', () => {
-    viewMode = viewMode === 'points' ? 'heat' : 'points';
-    heatToggle.textContent = viewMode === 'heat' ? '📍' : '🔥';
-    heatToggle.title = viewMode === 'heat' ? 'Ver como puntos' : 'Ver como mapa de calor';
-    heatToggle.classList.toggle('active', viewMode === 'heat');
-    renderIncidents();
-  });
-
-  const timeFilterLabel = document.getElementById('time-filter-label');
-  timeFilter.addEventListener('input', () => {
-    renderIncidents();
-  });
-
-  loadMap();
-
-  // --- Resumen de zona con IA ---
-  const zoneSummaryBtn = document.getElementById('zone-summary-btn');
-  const zoneToast = document.getElementById('zone-toast');
-  const zoneToastText = document.getElementById('zone-toast-text');
-  const zoneToastClose = document.getElementById('zone-toast-close');
-
-  function showToast(title, message, tone = '') {
-    zoneToastText.innerHTML = '';
-    const titleEl = document.createElement('span');
-    titleEl.id = 'zone-toast-title';
-    titleEl.textContent = title;
-    zoneToastText.append(titleEl, document.createTextNode(message));
-
-    zoneToast.classList.remove('tone-alert', 'tone-warn', 'tone-clear');
-    if (tone) zoneToast.classList.add(tone);
-    zoneToast.classList.add('visible');
-    // Recorre los controles del mapa justo lo que mide el toast ya renderizado.
-    document.documentElement.style.setProperty('--toast-offset', `${zoneToast.offsetHeight + 12}px`);
-  }
-
-  function hideToast() {
-    zoneToast.classList.remove('visible');
-    document.documentElement.style.setProperty('--toast-offset', '0px');
-  }
-
-  zoneToastClose.addEventListener('click', hideToast);
-
-  // Punto verde de "aquí estás" / centro de la zona -- tercer color, distinto
-  // del rojo (fraude por LADA) y del azul (incidentes con GPS).
-  let zoneCenterMarker = null;
-  function markZoneCenter(center) {
-    if (zoneCenterMarker) window.__radarMap.removeLayer(zoneCenterMarker);
-    zoneCenterMarker = L.circleMarker([center.lat, center.lng], {
-      radius: 7,
-      color: '#ffffff',
-      weight: 2,
-      fillColor: '#4ac97f',
-      fillOpacity: 1,
-    })
-      .addTo(window.__radarMap)
-      .bindPopup(center.isRealLocation ? 'Tu ubicación' : 'Centro de la zona analizada');
-  }
-
-  function getZoneCenter() {
-    // Prioridad: tu ubicación real (GPS). Si no hay permiso, cae al centro visible del mapa.
-    return new Promise((resolve) => {
-      if (!navigator.geolocation) {
-        resolve({ ...window.__radarMap.getCenter(), isRealLocation: false });
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, isRealLocation: true }),
-        () => resolve({ ...window.__radarMap.getCenter(), isRealLocation: false }),
-        { timeout: 6000 }
-      );
-    });
-  }
-
-  zoneSummaryBtn.addEventListener('click', async () => {
-    if (!window.__radarMap) return;
-    showToast('Ubicación', 'Obteniendo tu ubicación...');
-
-    const center = await getZoneCenter();
-
-    // Llevar el mapa a la zona para que los marcadores rojos/azules se vean.
-    // Zoom 12 es el máximo que sirve la capa de tiles (maxZoom: 12).
-    window.__radarMap.setView([center.lat, center.lng], 12);
-    markZoneCenter(center);
-
-    showToast(
-      center.isRealLocation ? 'Tu zona' : 'Zona en pantalla',
-      center.isRealLocation
-        ? 'Analizando reportes cerca de ti...'
-        : 'No se pudo usar tu ubicación — analizando lo que ves en el mapa...'
-    );
-
-    // La consulta a reportes (incluye texto libre) ahora vive del lado del servidor
-    // -- el navegador solo manda lat/lng, nunca descripciones crudas de terceros.
-    try {
-      const res = await fetch('https://ifcgwnbaiozuvjorkcoc.supabase.co/functions/v1/summarize-zone', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_PUBLISHABLE_KEY },
-        body: JSON.stringify({ lat: center.lat, lng: center.lng }),
-      });
-      const json = await res.json();
-      showToast(json.title || 'Resumen de zona', json.summary || 'No se pudo generar el resumen.', json.tone || 'tone-clear');
-    } catch {
-      showToast('Error', 'No se pudo generar el resumen. Intenta de nuevo.');
-    }
-  });
-</script>
+<script type="module" src="/site-assets/app.js"></script>
 
 </body>
 </html>
