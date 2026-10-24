@@ -254,23 +254,43 @@ function start(createClient, heatAvailable) {
       <p class="disclaimer-line">Reportes de usuarios, no verificados por Radar Urbano. No implica que el titular de este número haya cometido un delito.</p>`);
   }
 
+  // Busqueda por nombre: usa la RPC lookup_named (coincidencia exacta, minimo 5 caracteres).
+  // Si la RPC aun no existe (migracion sin aplicar), cae a la vista anterior.
+  async function lookupNamed(name) {
+    const rpc = await supabase.rpc('lookup_named', { p_name: name });
+    if (!rpc.error) {
+      const row = Array.isArray(rpc.data) ? rpc.data[0] : rpc.data;
+      return { data: row ? { report_count: Number(row.report_count) || 0 } : null, error: null };
+    }
+    if (rpc.error.code === '22023') return { data: null, error: null, tooShort: true };
+    if (rpc.error.code === 'PGRST202' || rpc.status === 404) {
+      const legacy = await supabase
+        .from('named_report_confidence')
+        .select('*')
+        .eq('value_normalized', name.trim().toLowerCase())
+        .maybeSingle();
+      return { data: legacy.data, error: legacy.error };
+    }
+    return { data: null, error: rpc.error };
+  }
+
   async function searchName() {
-    const nameNormalized = searchInput.value.trim().toLowerCase();
-    if (nameNormalized.length < 2) {
-      showResultMessage('Escribe un nombre válido.', true);
+    const name = searchInput.value.trim();
+    if (name.length < 5) {
+      showResultMessage('Escribe el nombre completo (mínimo 5 caracteres).', true);
       return;
     }
     searchBtn.disabled = true;
     showResultMessage('Buscando...', false);
 
-    const { data, error } = await supabase
-      .from('named_report_confidence')
-      .select('*')
-      .eq('value_normalized', nameNormalized)
-      .maybeSingle();
+    const { data, error, tooShort } = await lookupNamed(name);
 
     searchBtn.disabled = false;
 
+    if (tooShort) {
+      showResultMessage('Escribe el nombre completo (mínimo 5 caracteres).', true);
+      return;
+    }
     if (error) {
       showResultMessage('Error al buscar. Intenta de nuevo.', true);
       return;
@@ -291,7 +311,6 @@ function start(createClient, heatAvailable) {
       <span class="badge ${count >= 2 ? 'badge-high' : 'badge-low'}">
         ${count} reporte${plural(count, '', 's')} publicado${plural(count, '', 's')}
       </span>
-      <p class="muted">Último reporte: ${esc(fmtDate(data.last_reported_at))}</p>
       ${NAME_TIPS}
       <p class="disclaimer-line">Reportes de usuarios, revisados por un moderador antes de publicarse. No implica que la persona haya cometido un delito ni es un registro oficial.</p>`);
   }
