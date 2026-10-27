@@ -988,6 +988,34 @@ function start(createClient, heatAvailable) {
       showToast('Error', 'No se pudo generar el resumen. Intenta de nuevo.');
     }
   });
+
+  // ---- Enlaces para asistentes de IA (ver /agentes.html) ----
+  //   /?buscar=<telefono>                                    abre la busqueda de un numero
+  //   /?reportar=1&telefono=...&descripcion=...&zona=...     abre el reporte PRELLENADO
+  // Los parametros solo prellenan: nunca se envia nada solo. La persona revisa y confirma.
+  (function applyAgentLink() {
+    let params;
+    try { params = new URLSearchParams(window.location.search); } catch { return; }
+
+    const buscar = normalizePhone(params.get('buscar') || '');
+    if (buscar.length >= 8 && buscar.length <= 15) {
+      setSearchMode('phone');
+      searchInput.value = buscar;
+      searchSheet.open(searchInput);
+      searchNumber();
+      return;
+    }
+
+    if (params.get('reportar') === '1') {
+      showReportForm();
+      const tel = normalizePhone(params.get('telefono') || '');
+      if (tel.length >= 8 && tel.length <= 15) reportPhone.value = tel;
+      reportDescription.value = (params.get('descripcion') || '').slice(0, 1000);
+      reportLocationText.value = (params.get('zona') || '').slice(0, 200);
+      reportSheet.open(reportDescription);
+      setReportStatus('Reporte prellenado por un asistente. Revísalo, corrígelo y envíalo tú.');
+    }
+  })();
 }
 
 setupShare();

@@ -1,0 +1,33 @@
+# Radar Urbano
+
+> Mapa ciudadano de México para consultar y reportar fraudes telefónicos, robos y asaltos. Los reportes son de usuarios y no están verificados.
+
+Radar Urbano permite saber si un número de teléfono ya fue reportado por otras personas y ver incidentes cercanos. Si eres un asistente de IA, esta es la forma correcta de usarlo.
+
+## Qué puedes hacer
+
+- Consultar un número: cuántas personas distintas lo reportaron y cuándo fue el último reporte. Solo lectura, sin cuenta.
+- Preparar un reporte: construye un enlace que abre el formulario prellenado. La persona usuaria lo revisa y lo envía; tú no envías nada.
+
+## Reglas importantes
+
+- "Sin reportes" NO significa que un número sea seguro. Dilo siempre así a la persona usuaria.
+- Los reportes no están verificados y no implican que el titular del número cometiera un delito. No los presentes como hechos.
+- No prepares reportes sobre personas identificadas por nombre. Ese vertical requiere moderación humana y no está abierto a agentes.
+- No envíes reportes por tu cuenta ni en lote. Un reporte debe salir de una persona que vivió o presenció el hecho.
+
+## Documentación
+
+- [Guía para agentes](https://radarurbano.org/agentes.html): consulta de números, enlace de reporte prellenado y servidor MCP
+- [Especificación OpenAPI](https://radarurbano.org/openapi.json): consulta de números (solo lectura)
+- [Aviso de privacidad](https://radarurbano.org/privacidad.html)
+- [Términos de uso](https://radarurbano.org/terminos.html)
+
+## Enlaces directos
+
+- Buscar un número: https://radarurbano.org/?buscar=5512345678
+- Reporte prellenado: https://radarurbano.org/?reportar=1&telefono=5512345678&descripcion=Texto%20del%20reporte&zona=Colonia%20Centro
+
+## Contacto
+
+contacto@radarurbano.org

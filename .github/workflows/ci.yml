@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: '22'
       - name: html-validate
-        run: npx --yes html-validate@11.17.0 index.html privacidad.html terminos.html arco.html
+        run: npx --yes html-validate@11.17.0 index.html privacidad.html terminos.html arco.html agentes.html
       - name: Sintaxis de site-assets/app.js
         run: |
           cp site-assets/app.js app-check.mjs
@@ -44,6 +44,22 @@ jobs:
           if find _site \( -name 'README*' -o -name 'MODERATION*' -o -name 'RUNBOOK*' -o -path '*/supabase*' -o -path '*/.github*' -o -path '*/docs*' \) | grep -q .; then
             echo "_site contiene archivos que no deben publicarse"; exit 1
           fi
+
+  mcp:
+    name: Servidor MCP (tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mcp
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: mcp/package-lock.json
+      - run: npm ci
+      - run: npm test
 
   gitleaks:
     name: Secretos
