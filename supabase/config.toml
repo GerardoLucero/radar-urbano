@@ -1,0 +1,18 @@
+# Configuracion minima del proyecto Supabase para desplegar las Edge Functions con el CLI:
+#   supabase functions deploy corroborate-report summarize-zone --project-ref ifcgwnbaiozuvjorkcoc
+project_id = "ifcgwnbaiozuvjorkcoc"
+
+# corroborate-report solo lo llama el trigger de Postgres (pg_net) con su propio secreto compartido.
+[functions.corroborate-report]
+verify_jwt = false
+
+# summarize-zone lo llama el navegador con la llave publicable (no es un JWT de usuario) y limita por IP y por dia.
+[functions.summarize-zone]
+verify_jwt = false
+
+# health lo consulta el monitoreo sin sesion.
+[functions.health]
+verify_jwt = false
+
+[functions.ingest-sesnsp]
+verify_jwt = false
