@@ -14,6 +14,7 @@ Es un proyecto personal. Este repositorio se publica como ejemplo de cómo opera
 - **Supabase** (Postgres con RLS, `pg_cron`, Edge Functions en Deno) como backend.
 - **IA** para clasificar reportes, detectar duplicados, corroborar números repetidos y resumir una zona. Cascada Groq → NVIDIA NIM con salida validada con zod.
 - **Datos oficiales** (SESNSP) como contexto histórico por municipio.
+- **Asistentes de IA**: pueden consultar números y preparar reportes que la persona confirma, por enlaces directos o por un servidor MCP (ver `agentes.html`).
 - **Operación**: CI en cada PR, deploy con smoke test, monitoreo con ntfy, keep-alive de Supabase y backup nocturno cifrado.
 
 ## Arquitectura
@@ -57,7 +58,10 @@ flowchart LR
 | `supabase/functions/` | Edge Functions y módulos compartidos (`_shared/llm.ts`, `model-config.ts`) |
 | `supabase/evals/` | Casos de evaluación de la IA, incluidos adversariales |
 | `.github/` | CI, deploy, health, backup y scripts de prueba |
+| `mcp/` | Servidor MCP para asistentes de IA: consultar un número y preparar un reporte que la persona confirma |
+| `llms.txt`, `openapi.json`, `agentes.html` | Descubrimiento y guía para asistentes de IA |
 | `docs/funcionalidades.md` | Detalle de funcionalidades y de la arquitectura |
+| `docs/agentes.md` | Diseño del acceso para asistentes de IA y reglas |
 | `RUNBOOK.md`, `MODERATION.md`, `docs/restore.md` | Operación, moderación y restauración de backups |
 
 ## Desarrollo
