@@ -1,0 +1,7 @@
+# Reglas por defecto de gitleaks mas una excepcion acotada.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Llave publicable de Supabase: es publica por diseno (va en el navegador; el acceso lo limita RLS)"
+regexes = ['''sb_publishable_[A-Za-z0-9_-]{20,}''']

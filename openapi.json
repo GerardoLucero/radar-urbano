@@ -1,0 +1,65 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Radar Urbano: consulta de números",
+    "version": "1.0.0",
+    "description": "Consulta de solo lectura para saber cuántas personas distintas reportaron un número de teléfono mexicano. Los reportes son de usuarios y no están verificados. La ausencia de reportes no significa que un número sea seguro. Para reportar, usa el enlace prellenado descrito en https://radarurbano.org/agentes.html: la persona usuaria confirma el envío.",
+    "contact": { "email": "contacto@radarurbano.org" }
+  },
+  "servers": [{ "url": "https://ifcgwnbaiozuvjorkcoc.supabase.co/rest/v1" }],
+  "paths": {
+    "/phone_confidence": {
+      "get": {
+        "operationId": "consultarNumero",
+        "summary": "Reportes de un número de teléfono",
+        "description": "Devuelve una fila con el conteo de reportes únicos del número, o una lista vacía si nadie lo ha reportado. Límite de uso razonable; no hagas barridos de números.",
+        "security": [{ "apikey": [] }],
+        "parameters": [
+          {
+            "name": "phone_number",
+            "in": "query",
+            "required": true,
+            "description": "Filtro de PostgREST: eq.<solo dígitos, 8 a 15>. Ejemplo: eq.5512345678",
+            "schema": { "type": "string", "pattern": "^eq\\.[0-9]{8,15}$" }
+          },
+          {
+            "name": "select",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "default": "report_count,last_reported_at" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista con cero o un elemento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "report_count": { "type": "integer", "description": "Reportes únicos, sin verificar" },
+                      "last_reported_at": { "type": "string", "format": "date-time" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Filtro inválido" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "apikey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "apikey",
+        "description": "Llave publicable, la misma que usa el sitio y que es pública: sb_publishable_Z2tMpWR9mWfzttfralmWag_Aq7xSGkB"
+      }
+    }
+  }
+}

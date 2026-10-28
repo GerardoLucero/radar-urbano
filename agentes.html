@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Radar Urbano para asistentes de IA</title>
+<meta name="description" content="Cómo un asistente de IA puede consultar números reportados en Radar Urbano y preparar un reporte que la persona usuaria confirma.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://radarurbano.org/agentes.html">
+<meta name="color-scheme" content="dark">
+<style>
+  :root { --bg:#0f1115; --card:#1a1d24; --border:#2a2e37; --text:#e8e9ec; --muted:#9aa0ab; --accent:#e34a4a; --warn:#e3b34a; }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+  a { color:#8ab4ff; }
+  a:focus-visible { outline:2px solid var(--warn); outline-offset:2px; border-radius:2px; }
+  .skip { position:absolute; left:-999px; top:0; background:var(--card); padding:.5rem 1rem; z-index:10; }
+  .skip:focus { left:0; }
+  header { background:var(--card); border-bottom:1px solid var(--border); padding:.7rem 1rem; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; }
+  header strong { font-size:1rem; }
+  main { max-width:46rem; margin:0 auto; padding:1.2rem 1rem 3rem; }
+  h1 { font-size:1.6rem; line-height:1.25; margin:.4rem 0 .6rem; }
+  h2 { font-size:1.15rem; margin:2rem 0 .5rem; padding-top:.4rem; border-top:1px solid var(--border); }
+  p, li { color:var(--text); }
+  ul, ol { padding-left:1.3rem; }
+  li { margin:.3rem 0; }
+  .draft { border:1px solid var(--warn); background:rgba(227,179,74,.1); color:var(--warn); padding:.7rem .9rem; border-radius:8px; font-size:.92rem; margin:.8rem 0 1rem; }
+  .meta { color:var(--muted); font-size:.88rem; }
+  table { width:100%; border-collapse:collapse; font-size:.9rem; margin:.8rem 0; }
+  th, td { text-align:left; vertical-align:top; padding:.5rem .6rem; border:1px solid var(--border); }
+  th { background:var(--card); }
+  .scroll { overflow-x:auto; }
+  .box { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:.8rem 1rem; margin:1rem 0; }
+  code, pre { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.88rem; }
+  pre { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:.8rem 1rem; overflow-x:auto; white-space:pre-wrap; }
+  footer { border-top:1px solid var(--border); color:var(--muted); font-size:.8rem; text-align:center; padding:1rem; }
+  footer a { margin:0 .4rem; }
+</style>
+</head>
+<body>
+<a class="skip" href="#contenido">Saltar al contenido</a>
+<header><strong>Radar Urbano</strong><a href="/">Volver al mapa</a></header>
+<main id="contenido">
+<h1>Radar Urbano para asistentes de IA</h1>
+<p class="meta">Guía para quien construye o usa asistentes que consultan y ayudan a reportar.</p>
+
+<div class="draft">Los reportes son de usuarios y no están verificados. <strong>Sin reportes no significa que un número sea seguro.</strong> Un asistente debe decirlo así.</div>
+
+<h2>Qué se puede hacer</h2>
+<ul>
+  <li><strong>Consultar un número</strong> (solo lectura): cuántas personas distintas lo reportaron y cuándo fue el último reporte.</li>
+  <li><strong>Preparar un reporte</strong>: se construye un enlace que abre el formulario prellenado. La persona lo revisa y lo envía; el asistente nunca envía nada.</li>
+</ul>
+
+<h2>Enlaces directos</h2>
+<pre>https://radarurbano.org/?buscar=5512345678
+https://radarurbano.org/?reportar=1&amp;telefono=5512345678&amp;descripcion=Texto%20del%20reporte&amp;zona=Colonia%20Centro</pre>
+<div class="scroll">
+<table>
+  <thead><tr><th>Parámetro</th><th>Descripción</th></tr></thead>
+  <tbody>
+  <tr><td><code>buscar</code></td><td>Número de 8 a 15 dígitos. Abre la búsqueda y la ejecuta.</td></tr>
+  <tr><td><code>reportar=1</code></td><td>Abre el formulario de incidente prellenado.</td></tr>
+  <tr><td><code>telefono</code></td><td>Número involucrado (opcional si hay <code>zona</code>).</td></tr>
+  <tr><td><code>descripcion</code></td><td>Qué pasó, hasta 1000 caracteres.</td></tr>
+  <tr><td><code>zona</code></td><td>Colonia o zona, hasta 200 caracteres (opcional si hay <code>telefono</code>).</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Los parámetros solo prellenan el formulario. Nada se envía hasta que la persona pulsa <em>Reportar</em>.</p>
+
+<h2>API de consulta</h2>
+<p>La consulta de un número es una petición de solo lectura. La especificación está en <a href="/openapi.json">/openapi.json</a>.</p>
+<pre>curl "https://ifcgwnbaiozuvjorkcoc.supabase.co/rest/v1/phone_confidence?select=report_count,last_reported_at&amp;phone_number=eq.5512345678" \
+  -H "apikey: sb_publishable_Z2tMpWR9mWfzttfralmWag_Aq7xSGkB"</pre>
+<p>Una lista vacía significa que nadie ha reportado ese número. Hay un límite de uso razonable: no hagas barridos de números.</p>
+
+<h2>Servidor MCP</h2>
+<p>El repositorio incluye un servidor MCP (<code>mcp/</code>) con dos herramientas, <code>consultar_numero</code> y <code>preparar_reporte</code>. Se ejecuta en tu máquina:</p>
+<pre>{
+  "mcpServers": {
+    "radar-urbano": {
+      "command": "node",
+      "args": ["/ruta/a/radar-urbano/mcp/server.mjs"]
+    }
+  }
+}</pre>
+<p>Instrucciones completas en el <a href="https://github.com/GerardoLucero/radar-urbano/tree/main/mcp">repositorio</a>.</p>
+
+<h2>Reglas para asistentes</h2>
+<ul>
+  <li>Presenta los reportes como opiniones de usuarios sin verificar, nunca como hechos.</li>
+  <li>No prepares reportes sobre personas identificadas por nombre: ese tipo de reporte necesita moderación humana y no está abierto a agentes.</li>
+  <li>No envíes reportes por tu cuenta ni en lote. Un reporte debe venir de alguien que vivió o presenció el hecho.</li>
+  <li>No hagas barridos de números ni uses la consulta para armar listas de personas.</li>
+</ul>
+
+<p class="meta">Resumen para modelos de lenguaje: <a href="/llms.txt">/llms.txt</a>. Contacto: <a href="mailto:contacto@radarurbano.org">contacto@radarurbano.org</a>.</p>
+</main>
+<footer>
+  <a href="/privacidad.html">Privacidad</a>
+  <a href="/terminos.html">Términos</a>
+  <a href="/arco.html">Derechos ARCO</a>
+  <a href="/">Volver al mapa</a>
+</footer>
+</body>
+</html>
